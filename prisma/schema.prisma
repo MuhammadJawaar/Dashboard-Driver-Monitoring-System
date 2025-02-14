@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bus {
+  id              String      @id @db.Uuid
+  plat_bus        String?     @unique @db.VarChar
+  merek           String?     @db.VarChar
+  kapasitas       Int?
+  tahun_pembuatan Int?
+  penugasan       penugasan[]
+}
+
+model histori_pelanggaran {
+  id                String     @id @db.Uuid
+  waktu_pelanggaran DateTime   @db.Timestamp(6)
+  jenis_pelanggaran String     @db.VarChar
+  id_penugasan      Int?
+  penugasan         penugasan? @relation(fields: [id_penugasan], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "id_penugasan")
+}
+
+model pengemudi {
+  id            String      @id @db.Uuid
+  nama          String?     @db.VarChar
+  alamat        String?     @db.VarChar
+  nomor_telepn  String?     @db.VarChar
+  tanggal_lahir DateTime?   @db.Date
+  penugasan     penugasan[]
+}
+
+model penugasan {
+  id                  Int                   @id @default(autoincrement())
+  id_pengemudi        String?               @db.Uuid
+  id_bus              String?               @db.Uuid
+  tanggal_penugasan   DateTime?             @db.Date
+  histori_pelanggaran histori_pelanggaran[]
+  Bus                 Bus?                  @relation(fields: [id_bus], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "id_bus")
+  pengemudi           pengemudi?            @relation(fields: [id_pengemudi], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "id_pengemudi")
+}
+
+model supervisor {
+  id            String  @id @db.Uuid
+  nama          String? @db.VarChar
+  nomor_telepon String? @db.VarChar
+  email         String? @db.VarChar @unique
+  password      String? @db.VarChar
+}

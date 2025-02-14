@@ -1,19 +1,17 @@
-import ECommerce from "@/components/Dashboard/E-commerce";
+import React from "react";
 import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import Signin from "@/components/SignIn/page"
+
 
 export const metadata: Metadata = {
-  title:
-    "Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
+  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
 };
 
-export default function Home() {
+const SignIn: React.FC = () => {
   return (
-    <>
-      <DefaultLayout>
-        <ECommerce />
-      </DefaultLayout>
-    </>
+    <Signin/>
   );
-}
+};
+
+export default SignIn;
