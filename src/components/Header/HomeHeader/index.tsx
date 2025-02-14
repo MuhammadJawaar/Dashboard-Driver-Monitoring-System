@@ -1,6 +1,5 @@
 import Link from "next/link";
-import DarkModeSwitcher from "./DarkModeSwitcher";
-import DropdownUser from "./DropdownUser";
+import DarkModeSwitcher from "../DarkModeSwitcher";
 import Image from "next/image";
 
 const Header = (props: {
@@ -116,7 +115,7 @@ const Header = (props: {
           </ul>
 
           {/* <!-- User Area --> */}
-          <DropdownUser />
+          {/* <DropdownUser /> */}
           {/* <!-- User Area --> */}
         </div>
       </div>

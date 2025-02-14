@@ -5,14 +5,13 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
-import HomeHeader from "@/components/Header/HomeHeader"
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState<boolean>(true);
 
   // const pathname = usePathname();
@@ -25,7 +24,6 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning={true}>
         <div className="dark:bg-boxdark-2 dark:text-bodydark">
-        <HomeHeader  sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}/>
           {loading ? <Loader /> : children}
         </div>
       </body>
