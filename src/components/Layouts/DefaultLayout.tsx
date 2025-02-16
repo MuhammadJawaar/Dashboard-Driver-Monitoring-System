@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ReactNode } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 
@@ -9,31 +9,37 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Gunakan useEffect agar state tidak menyebabkan mismatch antara SSR dan CSR
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, []);
+
   return (
     <>
-      {/* <!-- ===== Page Wrapper Start ===== --> */}
+      {/* Page Wrapper Start */}
       <div className="flex">
-        {/* <!-- ===== Sidebar Start ===== --> */}
+        {/* Sidebar Start */}
         <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        {/* <!-- ===== Sidebar End ===== --> */}
+        {/* Sidebar End */}
 
-        {/* <!-- ===== Content Area Start ===== --> */}
+        {/* Content Area Start */}
         <div className="relative flex flex-1 flex-col lg:ml-72.5">
-          {/* <!-- ===== Header Start ===== --> */}
+          {/* Header Start */}
           <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-          {/* <!-- ===== Header End ===== --> */}
+          {/* Header End */}
 
-          {/* <!-- ===== Main Content Start ===== --> */}
+          {/* Main Content Start */}
           <main>
             <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
               {children}
             </div>
           </main>
-          {/* <!-- ===== Main Content End ===== --> */}
+          {/* Main Content End */}
         </div>
-        {/* <!-- ===== Content Area End ===== --> */}
+        {/* Content Area End */}
       </div>
-      {/* <!-- ===== Page Wrapper End ===== --> */}
+      {/* Page Wrapper End */}
     </>
   );
 }

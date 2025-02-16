@@ -1,25 +1,24 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import TableOne from "@/components/Tables/TableOne";
 import TableThree from "@/components/Tables/TableThree";
-import TableTwo from "@/components/Tables/TableTwo";
+import Search from "@/components/SearchBar/SearchBar"; // Import Search
 
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
-
-export const metadata: Metadata = {
-  title: "Next.js Tables | TailAdmin - Next.js Dashboard Template",
-  description:
-    "This is Next.js Tables page for TailAdmin - Next.js Tailwind CSS Admin Dashboard Template",
+export const metadata = {
+  title: "Bus List | Admin Dashboard",
+  description: "Daftar bus yang tersedia dalam sistem",
 };
 
 const TablesPage = () => {
   return (
-    <DefaultLayout>
+    <div className="p-6">
       <Breadcrumb pageName="Bus" />
-      <div className="flex flex-col gap-10 h-screen">
+      {/* Hilangkan celah antara search dan tabel */}
+      <div className="flex flex-col gap-0 h-screen">
+        {/* Search bar ditempatkan langsung di atas tabel tanpa padding bawah */}
+        <Search placeholder="Cari bus..." />
+        {/* Table */}
         <TableThree />
       </div>
-    </DefaultLayout>
+    </div>
   );
 };
 
