@@ -9,7 +9,7 @@ datasource db {
 
 model Bus {
   id              String      @id @db.Uuid
-  plat_bus        String?     @unique @db.VarChar
+  plat_bus        String     @unique @db.VarChar
   merek           String?     @db.VarChar
   kapasitas       Int?
   tahun_pembuatan Int?

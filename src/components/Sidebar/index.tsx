@@ -314,6 +314,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const pathname = usePathname();
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
 
+  useEffect(() => {
+    // Ambil nama halaman dari pathname
+    const currentPage = pathname.split("/").pop() || "dashboard";
+
+    // Jika nilai di localStorage tidak sesuai dengan URL, perbarui
+    if (pageName !== currentPage) {
+      setPageName(currentPage);
+    }
+  }, [pathname]);
+
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
       <aside
@@ -321,9 +331,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* <!-- SIDEBAR HEADER --> */}
+        {/* SIDEBAR HEADER */}
         <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
-          {/* <Link href="/">
+          <Link href="/">
             <Image
               width={176}
               height={32}
@@ -331,7 +341,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               alt="Logo"
               priority
             />
-          </Link> */}
+          </Link>
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -353,10 +363,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             </svg>
           </button>
         </div>
-        {/* <!-- SIDEBAR HEADER --> */}
 
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
-          {/* <!-- Sidebar Menu --> */}
           <nav className="mt-5 px-4 py-4 lg:mt-9 lg:px-6">
             {menuGroups.map((group, groupIndex) => (
               <div key={groupIndex}>
@@ -377,7 +385,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </div>
             ))}
           </nav>
-          {/* <!-- Sidebar Menu --> */}
         </div>
       </aside>
     </ClickOutside>
@@ -385,3 +392,4 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 };
 
 export default Sidebar;
+

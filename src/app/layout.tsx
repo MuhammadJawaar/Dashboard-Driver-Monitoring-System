@@ -1,34 +1,23 @@
-"use client";
+
 import "jsvectormap/dist/jsvectormap.css";
 import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
-import React, { useEffect, useState } from "react";
-import Loader from "@/components/common/Loader";
-import HomeHeader from "@/components/Header/HomeHeader"
+import { Metadata } from "next";
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState<boolean>(true);
 
-  // const pathname = usePathname();
+export const metadata: Metadata = {
+  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+};
 
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
-
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>
-        <div className="dark:bg-boxdark-2 dark:text-bodydark">
-        <HomeHeader  sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}/>
-          {loading ? <Loader /> : children}
-        </div>
-      </body>
+      <body>
+        {children}
+        </body>
     </html>
   );
 }
+
