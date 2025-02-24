@@ -9,44 +9,54 @@ datasource db {
 
 model Bus {
   id              String      @id @db.Uuid
-  plat_bus        String     @unique @db.VarChar
+  plat_bus        String      @unique @db.VarChar
   merek           String?     @db.VarChar
   kapasitas       Int?
   tahun_pembuatan Int?
-  penugasan       penugasan[]
+  createdAt       DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime    @updatedAt @db.Timestamp(6)
+  raspberrypi     raspberrypi[]
 }
 
 model histori_pelanggaran {
-  id                String     @id @db.Uuid
+  id                Int        @id @default(autoincrement())
   waktu_pelanggaran DateTime   @db.Timestamp(6)
   jenis_pelanggaran String     @db.VarChar
-  id_penugasan      Int?
-  penugasan         penugasan? @relation(fields: [id_penugasan], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "id_penugasan")
+  id_raspberrypi    Int?       // ✅ Perbaiki typo dari id_rasberrypi ke id_raspberrypi
+  image             String?    @db.VarChar
+  createdAt         DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime   @updatedAt @db.Timestamp(6)
+  raspberrypi       raspberrypi? @relation(fields: [id_raspberrypi], references: [id], onDelete: Cascade, onUpdate: NoAction) // ✅ Ubah onDelete jadi Cascade
 }
 
 model pengemudi {
   id            String      @id @db.Uuid
   nama          String?     @db.VarChar
   alamat        String?     @db.VarChar
-  nomor_telepn  String?     @db.VarChar
+  nomor_telepon String?     @db.VarChar
   tanggal_lahir DateTime?   @db.Date
-  penugasan     penugasan[]
+  createdAt     DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime    @updatedAt @db.Timestamp(6)
+  raspberrypi   raspberrypi[]
 }
 
-model penugasan {
+model raspberrypi {
   id                  Int                   @id @default(autoincrement())
   id_pengemudi        String?               @db.Uuid
   id_bus              String?               @db.Uuid
-  tanggal_penugasan   DateTime?             @db.Date
+  createdAt           DateTime              @default(now()) @db.Timestamp(6)
+  updatedAt           DateTime              @updatedAt @db.Timestamp(6)
   histori_pelanggaran histori_pelanggaran[]
-  Bus                 Bus?                  @relation(fields: [id_bus], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "id_bus")
-  pengemudi           pengemudi?            @relation(fields: [id_pengemudi], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "id_pengemudi")
+  Bus                 Bus?                  @relation(fields: [id_bus], references: [id], onDelete: Cascade, onUpdate: NoAction) // ✅ Ubah onDelete jadi Cascade
+  pengemudi           pengemudi?            @relation(fields: [id_pengemudi], references: [id], onDelete: Cascade, onUpdate: NoAction) // ✅ Ubah onDelete jadi Cascade
 }
 
 model supervisor {
   id            String  @id @db.Uuid
   nama          String? @db.VarChar
   nomor_telepon String? @db.VarChar
-  email         String? @db.VarChar @unique
-  password      String? @db.VarChar
+  email         String  @db.VarChar @unique
+  password      String  @db.VarChar @default("") // ✅ Tambahkan default value untuk menghindari null
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt @db.Timestamp(6)
 }

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import EditBusForm from "@/components/Forms/EditBusForm";
 
 export const metadata: Metadata = {
@@ -6,13 +7,13 @@ export const metadata: Metadata = {
   description: "Edit bus details in the Next.js Admin Dashboard.",
 };
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page() {
   return (
     <div className="flex h-screen sm:grid-cols-2">
       <div className="w-full flex flex-col gap-9">
-
-          <EditBusForm busId={params.id} />
-
+        <Suspense>
+          <EditBusForm /> {/* Dibungkus dengan Suspense */}
+        </Suspense>
       </div>
     </div>
   );
