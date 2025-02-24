@@ -1,34 +1,51 @@
-import NextAuth from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
+import NextAuth from "next-auth";
+import { z, ZodError } from "zod";
+import Credentials from "next-auth/providers/credentials";
 import { authConfig } from '@/auth.config';
-import { z } from 'zod';
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
-// Fungsi untuk mengambil user dari API
+const signInSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
 async function getUser(email: string) {
-  const response = await fetch(`http://localhost:3000/api/supervisor?email=${email}`);
+  const response = await fetch(`http://localhost:3000/api/supervisor/login?email=${email}`);
   if (!response.ok) return null;
   return response.json();
 }
 
-export const { auth, signIn, signOut } = NextAuth({
+export const { handlers, auth,signIn,signOut } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
-      async authorize(credentials) {
-        const schema = z.object({ email: z.string().email(), password: z.string().min(6) });
-        const parsed = schema.safeParse(credentials);
-        if (!parsed.success) return null;
-
-        const { email, password } = parsed.data;
-        const user = await getUser(email);
-        if (!user || !user.password) return null;
-
-        // Cek password dengan bcryptjs
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) return null;
-
-        return { id: user.id, nama: user.nama, email: user.email };
+      credentials: {
+        email: {},
+        password: {},
+      },
+      authorize: async (credentials) => {
+        try {
+          const { email, password } = await signInSchema.parseAsync(credentials);
+          
+          // Ambil user dari API
+          const user = await getUser(email);
+          if (!user) {
+            throw new Error("Invalid credentials.");
+          }
+          
+          // Verifikasi password
+          const isPasswordValid = await bcrypt.compare(password, user.password);
+          if (!isPasswordValid) {
+            throw new Error("Invalid credentials.");
+          }
+          
+          return user;
+        } catch (error) {
+          if (error instanceof ZodError) {
+            return null;
+          }
+          throw error;
+        }
       },
     }),
   ],

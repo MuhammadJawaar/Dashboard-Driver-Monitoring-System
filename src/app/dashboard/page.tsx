@@ -1,17 +1,13 @@
-import ECommerce from "@/components/Dashboard/E-commerce";
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { auth } from "../../../auth"
 
-export const metadata: Metadata = {
-  title:
-    "Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
-};
+export default async function UserAvatar() {
+  const session = await auth()
 
-export default function Home() {
+  if (!session?.user) return null
+
   return (
-    <>
-        <ECommerce />
-    </>
-  );
+    <div>
+      <pre>{JSON.stringify(session.user, null, 2)}</pre>
+    </div>
+  )
 }

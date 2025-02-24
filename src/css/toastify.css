@@ -1,0 +1,13 @@
+/* styles/toastify.css */
+:root {
+    --toastify-color-dark: #1e293b !important; /* Background dark */
+    --toastify-text-color-dark: white !important; /* Text color */
+    --toastify-color-progress-dark: #4f46e5 !important; /* Progress bar */
+  }
+  
+  /* Optional: Custom styling */
+  .Toastify__toast--dark {
+    border-radius: 8px !important;
+    font-size: 14px !important;
+  }
+  

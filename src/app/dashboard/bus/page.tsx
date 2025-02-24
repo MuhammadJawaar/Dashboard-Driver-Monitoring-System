@@ -1,6 +1,7 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import TableThree from "@/components/Tables/TableThree";
 import Search from "@/components/SearchBar/SearchBar"; // Import Search
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Bus List | Admin Dashboard",
@@ -14,9 +15,11 @@ const TablesPage = () => {
       {/* Hilangkan celah antara search dan tabel */}
       <div className="flex flex-col gap-0 h-screen">
         {/* Search bar ditempatkan langsung di atas tabel tanpa padding bawah */}
-        <Search placeholder="Cari bus..." />
-        {/* Table */}
+        <Suspense>
+        <Search placeholder="Cari bus..." buttonHref="/dashboard/bus/add" buttonLabel="Tambah Bus" />
         <TableThree />
+        </Suspense>
+       
       </div>
     </div>
   );
