@@ -15,12 +15,15 @@ const pelanggaranSchema = z.object({
   image: z.string().nullable().optional(),
 });
 
-// **GET ALL PELANGGARAN with Pagination & Include RaspberryPi**
+// **GET ALL PELANGGARAN with Search, Date Filter, Pagination & Include RaspberryPi**
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 5;
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
     if (page < 1 || limit < 1) {
       return NextResponse.json(
@@ -29,21 +32,52 @@ export async function GET(req: Request) {
       );
     }
 
-    const totalPelanggaran = await prisma.histori_pelanggaran.count();
+    // Validasi rentang tanggal jika ada
+    let dateFilter: any = {};
+    if (startDate && !isNaN(Date.parse(startDate))) {
+      dateFilter.gte = new Date(startDate);
+    }
+    if (endDate && !isNaN(Date.parse(endDate))) {
+      dateFilter.lte = new Date(endDate);
+    }
 
+    // Filter pencarian
+    let searchFilter: any = {};
+    if (query) {
+      searchFilter.OR = [
+        { jenis_pelanggaran: { contains: query, mode: "insensitive" } },
+        { id_raspberrypi: { equals: isNaN(Number(query)) ? undefined : Number(query) } },
+        { raspberrypi: { pengemudi: { nama: { contains: query, mode: "insensitive" } } } },
+      ];
+    }
+
+    // Hitung total data sesuai filter
+    const totalPelanggaran = await prisma.histori_pelanggaran.count({
+      where: {
+        ...searchFilter,
+        waktu_pelanggaran: Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
+      },
+    });
+
+    // Pastikan halaman tidak melebihi total
     const totalPages = Math.max(Math.ceil(totalPelanggaran / limit), 1);
     const currentPage = Math.min(page, totalPages);
     const skip = (currentPage - 1) * limit;
 
+    // Ambil data sesuai filter
     const pelanggaran = await prisma.histori_pelanggaran.findMany({
+      where: {
+        ...searchFilter,
+        waktu_pelanggaran: Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
+      },
       skip,
       take: limit,
       orderBy: { waktu_pelanggaran: "desc" },
       include: {
         raspberrypi: {
           include: {
-            pengemudi: true, // **Menampilkan data pengemudi yang terhubung**
-            Bus: true, // **Menampilkan data bus yang terhubung**
+            pengemudi: true,
+            Bus: true,
           },
         },
       },
@@ -62,49 +96,6 @@ export async function GET(req: Request) {
     console.error("Error fetching pelanggaran:", error);
     return NextResponse.json(
       { error: "Gagal mengambil data pelanggaran" },
-      { status: 500 }
-    );
-  }
-}
-
-// **CREATE A NEW PELANGGARAN**
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-
-    if (!body || Object.keys(body).length === 0) {
-      return NextResponse.json(
-        { error: "Body request tidak boleh kosong" },
-        { status: 400 }
-      );
-    }
-
-    const parsedData = pelanggaranSchema.safeParse(body);
-    if (!parsedData.success) {
-      return NextResponse.json(
-        { errors: parsedData.error.format() },
-        { status: 400 }
-      );
-    }
-
-    const { waktu_pelanggaran, jenis_pelanggaran, id_raspberrypi, image } = parsedData.data;
-
-    const newPelanggaran: HistoriPelanggaran = await prisma.histori_pelanggaran.create({
-      data: {
-        waktu_pelanggaran: new Date(waktu_pelanggaran),
-        jenis_pelanggaran,
-        id_raspberrypi: id_raspberrypi ?? undefined,
-        image: image ?? undefined,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json(newPelanggaran, { status: 201 });
-  } catch (error: any) {
-    console.error("Error creating pelanggaran:", error);
-    return NextResponse.json(
-      { error: "Terjadi kesalahan pada server" },
       { status: 500 }
     );
   }

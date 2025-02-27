@@ -5,3 +5,5 @@ export interface RaspberryPi {
     createdAt: Date;
     updatedAt: Date;
   }
+
+  export type RaspberryPiInput = Omit<RaspberryPi, "id" | "createdAt" | "updatedAt">;
