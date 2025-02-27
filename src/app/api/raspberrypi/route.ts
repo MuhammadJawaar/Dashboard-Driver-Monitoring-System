@@ -11,10 +11,11 @@ const raspberryPiSchema = z.object({
   id_bus: z.string().uuid().nullable().optional(),
 });
 
-// **GET ALL RASPBERRYPI with Pagination**
+// **GET ALL RASPBERRYPI with Pagination & Search**
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 5;
 
@@ -25,19 +26,48 @@ export async function GET(req: Request) {
       );
     }
 
-    const totalRaspberryPi = await prisma.raspberrypi.count();
+    // Hitung total data dengan filter pencarian
+    const totalRaspberryPi = await prisma.raspberrypi.count({
+      where: {
+        OR: [
+          { pengemudi: { nama: { contains: query, mode: "insensitive" } } },
+          { Bus: { plat_bus: { contains: query, mode: "insensitive" } } },
+          { Bus: { merek: { contains: query, mode: "insensitive" } } },
+          { id: { equals: isNaN(Number(query)) ? undefined : Number(query) } },           
+        ],
+      },
+    });
 
+    // Pastikan halaman tidak melebihi total
     const totalPages = Math.max(Math.ceil(totalRaspberryPi / limit), 1);
     const currentPage = Math.min(page, totalPages);
     const skip = (currentPage - 1) * limit;
 
+    // Ambil data dengan pencarian & pagination
     const raspberryPi = await prisma.raspberrypi.findMany({
+      where: {
+        OR: [
+          { pengemudi: { nama: { contains: query, mode: "insensitive" } } },
+          { Bus: { plat_bus: { contains: query, mode: "insensitive" } } },
+          { Bus: { merek: { contains: query, mode: "insensitive" } } },
+          { id: { equals: isNaN(Number(query)) ? undefined : Number(query) } }, 
+        ],
+      },
       skip,
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
-        pengemudi: true, // Ambil data pengemudi yang terhubung
-        Bus: true, // Ambil data bus yang terhubung
+        pengemudi: {
+          select: {
+            nama: true,
+          },
+        },
+        Bus: {
+          select: {
+            merek: true,
+            plat_bus: true,
+          },
+        },
       },
     });
 
@@ -80,12 +110,16 @@ export async function POST(req: Request) {
 
     const { id_pengemudi, id_bus } = parsedData.data;
 
-    const newRaspberryPi: RaspberryPi = await prisma.raspberrypi.create({
+    const newRaspberryPi = await prisma.raspberrypi.create({
       data: {
         id_pengemudi: id_pengemudi ?? null,
         id_bus: id_bus ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
+      },
+      include: {
+        pengemudi: true, // Mengambil semua data pengemudi
+        Bus: true, // Mengambil semua data bus
       },
     });
 
@@ -97,3 +131,4 @@ export async function POST(req: Request) {
     );
   }
 }
+
