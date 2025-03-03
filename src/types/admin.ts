@@ -1,4 +1,4 @@
-export interface Supervisor {
+export interface Admin {
     id: string;
     nama?: string | null;
     nomor_telepon?: string | null;
@@ -8,4 +8,4 @@ export interface Supervisor {
     updatedAt: Date;
   }
   
-export type SupervisorInput = Omit<Supervisor, "id" | "createdAt" | "updatedAt">;
+export type AdminInput = Omit<Admin, "id" | "createdAt" | "updatedAt">;

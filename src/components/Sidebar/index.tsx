@@ -77,8 +77,8 @@ const menuGroups = [
       },
       {
         icon: <UserCog className="w-5 h-5 text-current" />,
-        label: "Supervisor",
-        route: "/dashboard/supervisor",
+        label: "Admin",
+        route: "/dashboard/admin",
       },
       {
         icon: (
