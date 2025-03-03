@@ -1,10 +1,10 @@
 import { Metadata } from "next";
-import AddSupervisorForm from "@/components/Forms/AddSupervisorForm";
+import AddAdminForm from "@/components/Forms/AddAdminForm";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Add Supervisor | Next.js Admin Dashboard",
-  description: "Add Supervisor details in the Next.js Admin Dashboard.",
+  title: "Add Admin | Next.js Admin Dashboard",
+  description: "Add Admin details in the Next.js Admin Dashboard.",
 };
 
 export default function Page() {
@@ -12,7 +12,7 @@ export default function Page() {
     <div className="flex h-screen sm:grid-cols-2">
       <div className="w-full flex flex-col gap-9">
         <Suspense>
-        <AddSupervisorForm  /> {/* Kirim props ke Client Component */}
+        <AddAdminForm  /> {/* Kirim props ke Client Component */}
         </Suspense>
       </div>
     </div>

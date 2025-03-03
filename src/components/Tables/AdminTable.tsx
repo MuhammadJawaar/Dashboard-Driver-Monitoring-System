@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import Link from "next/link";
-import { Supervisor } from "@/types/supervisor";
+import { Admin } from "@/types/admin";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
@@ -23,7 +23,7 @@ const getTheme = () => {
   return localStorage.getItem("color-theme") || "light";
 };
 
-const SupervisorTable = () => {
+const AdminTable = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -33,11 +33,11 @@ const SupervisorTable = () => {
   const limit = Number(searchParams.get("limit")) || 5;
 
   const { data, error, isLoading } = useSWR(
-    `/api/supervisor?query=${query}&page=${page}&limit=${limit}`,
+    `/api/admin?query=${query}&page=${page}&limit=${limit}`,
     fetcher
   );
 
-  const supervisors: Supervisor[] = data?.supervisors || [];
+  const admins: Admin[] = data?.admins || [];
   const totalPages = data?.pagination?.totalPages || 1;
 
   const changePage = (offset: number) => {
@@ -58,7 +58,7 @@ const SupervisorTable = () => {
     const theme = await getTheme();
     const result = await MySwal.fire({
       title: "Apakah Anda yakin?",
-      text: "Data supervisor yang dihapus tidak dapat dikembalikan!",
+      text: "Data admin yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -68,24 +68,29 @@ const SupervisorTable = () => {
       background: theme === "dark" ? "#1a222c" : "#fff",
       color: theme === "dark" ? "#fff" : "#000",
     });
-
+  
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`/api/supervisor/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Gagal menghapus supervisor");
-
+        const res = await fetch(`/api/admin/${id}`, { method: "DELETE" });
+        const errorData = await res.json(); // Ambil data error dari API
+  
+        if (!res.ok) {
+          throw new Error(errorData.error || "Gagal menghapus admin"); // Gunakan pesan API jika ada
+        }
+  
         MySwal.fire({
           title: "Terhapus!",
-          text: "Data supervisor berhasil dihapus.",
+          text: "Data admin berhasil dihapus.",
           icon: "success",
           background: theme === "dark" ? "#1a222c" : "#fff",
           color: theme === "dark" ? "#fff" : "#000",
         });
-        mutate(`/api/supervisor?query=${query}&page=${page}&limit=${limit}`);
-      } catch (error) {
+  
+        mutate(`/api/admin?query=${query}&page=${page}&limit=${limit}`);
+      } catch (error: any) {
         MySwal.fire({
           title: "Error!",
-          text: "Terjadi kesalahan saat menghapus supervisor.",
+          text: error.message || "Terjadi kesalahan saat menghapus admin.",
           icon: "error",
           background: theme === "dark" ? "#1a222c" : "#fff",
           color: theme === "dark" ? "#fff" : "#000",
@@ -93,13 +98,14 @@ const SupervisorTable = () => {
       }
     }
   };
+  
 
   if (isLoading) {
-    return <p className="text-center text-gray-500 mt-3">Loading supervisor data...</p>;
+    return <p className="text-center text-gray-500 mt-3">Loading admin data...</p>;
   }
 
   if (error) {
-    return <p className="text-center text-red-500 mt-3">Gagal memuat data supervisor</p>;
+    return <p className="text-center text-red-500 mt-3">Gagal memuat data admin</p>;
   }
 
   return (
@@ -116,24 +122,24 @@ const SupervisorTable = () => {
               </tr>
             </thead>
             <tbody>
-              {supervisors.length === 0 ? (
+              {admins.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-4 text-sm text-gray-500">
                     Tidak ada data yang ditemukan
                   </td>
                 </tr>
               ) : (
-                supervisors.map((supervisor: Supervisor) => (
-                  <tr key={supervisor.id} className="border-b dark:border-strokedark">
-                    <td className="px-4 py-4 text-sm text-black dark:text-white">{supervisor.nama}</td>
-                    <td className="px-4 py-4 text-sm text-black dark:text-white">{supervisor.email}</td>
-                    <td className="px-4 py-4 text-sm text-black dark:text-white">{supervisor.nomor_telepon || "-"}</td>
+                admins.map((admin: Admin) => (
+                  <tr key={admin.id} className="border-b dark:border-strokedark">
+                    <td className="px-4 py-4 text-sm text-black dark:text-white">{admin.nama}</td>
+                    <td className="px-4 py-4 text-sm text-black dark:text-white">{admin.email}</td>
+                    <td className="px-4 py-4 text-sm text-black dark:text-white">{admin.nomor_telepon || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <Link href={`/dashboard/supervisor/${supervisor.id}/edit`}>
+                        <Link href={`/dashboard/admin/${admin.id}/edit`}>
                           <PencilIcon className="w-5 h-5 text-blue-500 hover:text-blue-600" />
                         </Link>
-                        <button onClick={() => handleDelete(supervisor.id)}>
+                        <button onClick={() => handleDelete(admin.id)}>
                           <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-600" />
                         </button>
                       </div>
@@ -186,4 +192,4 @@ const SupervisorTable = () => {
   );
 };
 
-export default SupervisorTable;
+export default AdminTable;

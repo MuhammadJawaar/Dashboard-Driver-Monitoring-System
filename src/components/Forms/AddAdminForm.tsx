@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import bcrypt from "bcryptjs";
-import { createSupervisor } from "@/lib/ApiCall/supervisor";
-import { SupervisorInput } from "@/types/supervisor";
+import { createAdmin } from "@/lib/ApiCall/admin";
+import { AdminInput } from "@/types/admin";
 
-export default function AddSupervisorForm() {
+export default function AddAdminForm() {
   const router = useRouter();
-  const [supervisorData, setSupervisorData] = useState<SupervisorInput>({
+  const [adminData, setAdminData] = useState<AdminInput>({
     nama: "",
     nomor_telepon: "",
     email: "",
@@ -29,7 +29,7 @@ export default function AddSupervisorForm() {
       setError(null);
     }
 
-    setSupervisorData((prev) => ({
+    setAdminData((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -45,19 +45,19 @@ export default function AddSupervisorForm() {
     }
 
     try {
-      const hashedPassword = await bcrypt.hash(supervisorData.password, 10);
-      const newData = { ...supervisorData, password: hashedPassword };
+      const hashedPassword = await bcrypt.hash(adminData.password, 10);
+      const newData = { ...adminData, password: hashedPassword };
 
-      await createSupervisor(newData);
-      toast.success("Supervisor berhasil ditambahkan!");
-      router.push("/dashboard/supervisor");
+      await createAdmin(newData);
+      toast.success("Admin berhasil ditambahkan!");
+      router.push("/dashboard/admin");
     } catch (error: any) {
-      console.error("Error adding supervisor:", error);
+      console.error("Error adding admin:", error);
 
       // Tangkap pesan error dari API
       const errorMessage =
         error.response?.data?.error ||
-        "Gagal menambahkan supervisor. Silakan coba lagi!";
+        "Gagal menambahkan admin. Silakan coba lagi!";
 
       toast.error(errorMessage);
     } finally {
@@ -69,7 +69,7 @@ export default function AddSupervisorForm() {
     <div className="w-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="border-b border-stroke px-4 py-4 dark:border-strokedark">
         <h3 className="text-lg font-medium text-black dark:text-white">
-          Tambah Supervisor
+          Tambah Admin
         </h3>
       </div>
 
@@ -81,7 +81,7 @@ export default function AddSupervisorForm() {
           <input
             type="text"
             name="nama"
-            value={supervisorData.nama ?? ""}
+            value={adminData.nama ?? ""}
             onChange={handleChange}
             placeholder="Masukkan nama"
             className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-sm text-black dark:border-form-strokedark dark:bg-form-input dark:text-white"
@@ -95,7 +95,7 @@ export default function AddSupervisorForm() {
           <input
             type="tel"
             name="nomor_telepon"
-            value={supervisorData.nomor_telepon ?? ""}
+            value={adminData.nomor_telepon ?? ""}
             onChange={handleChange}
             placeholder="Masukkan nomor telepon"
             className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-sm text-black dark:border-form-strokedark dark:bg-form-input dark:text-white"
@@ -110,7 +110,7 @@ export default function AddSupervisorForm() {
           <input
             type="email"
             name="email"
-            value={supervisorData.email ?? ""}
+            value={adminData.email ?? ""}
             onChange={handleChange}
             placeholder="Masukkan email"
             className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-sm text-black dark:border-form-strokedark dark:bg-form-input dark:text-white"
@@ -124,7 +124,7 @@ export default function AddSupervisorForm() {
           <input
             type={showPassword ? "text" : "password"}
             name="password"
-            value={supervisorData.password ?? ""}
+            value={adminData.password ?? ""}
             onChange={handleChange}
             placeholder="Masukkan password"
             className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-sm text-black dark:border-form-strokedark dark:bg-form-input dark:text-white"

@@ -10,7 +10,7 @@ const signInSchema = z.object({
 });
 
 async function getUser(email: string) {
-  const response = await fetch(`http://localhost:3000/api/supervisor/login?email=${email}`);
+  const response = await fetch(`http://localhost:3000/api/admin/login?email=${email}`);
   if (!response.ok) return null;
   return response.json();
 }
