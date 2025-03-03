@@ -4,8 +4,8 @@ import Search from "@/components/SearchBar/SearchBar"; // Import Search
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Pengemudi List | Admin Dashboard",
-  description: "Daftar bus yang tersedia dalam sistem",
+  title: "Admin Dashboard",
+  description: "Daftar Admin yang tersedia dalam sistem",
 };
 
 const TablesPage = () => {

@@ -14,10 +14,10 @@ const updateAdminSchema = z.object({
 });
 
 // **GET Admin BY ID**
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request){
   try {
-    const { id } = params;
-    
+    const id = req.url.split("/").pop();
+  
     const admin = await prisma.admin.findUnique({
       where: { id },
     });
@@ -34,9 +34,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // **UPDATE Admin BY ID**
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request) {
   try {
-    const { id } = params;
+    const id = req.url.split("/").pop();
     const body = await req.json();
 
     // Validasi input
@@ -67,7 +67,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 // **DELETE Admin BY ID**
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request ) {
   
 
   try {
@@ -76,7 +76,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const id = req.url.split("/").pop();
 
     if (session.user.id === id) {
       return NextResponse.json({ error: "Anda tidak dapat menghapus akun sendiri" }, { status: 400 });

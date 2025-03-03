@@ -11,9 +11,9 @@ const raspberryPiSchema = z.object({
 });
 
 // **GET RaspberryPi by ID**
-export async function GET(req: Request, context: { params: { id: string } }) {
+export async function GET(req: Request) {
   try {
-    const id = Number(context.params.id); // Gunakan context.params.id
+    const id = Number(req.url.split("/").pop()); // Gunakan context.params.id
     if (isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
     }
@@ -37,9 +37,9 @@ export async function GET(req: Request, context: { params: { id: string } }) {
 }
 
 // **UPDATE RaspberryPi by ID**
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request) {
   try {
-    const id = Number(params.id);
+    const id = Number(req.url.split("/").pop());
     if (isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
     }
@@ -76,9 +76,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 // **DELETE RaspberryPi by ID**
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request) {
   try {
-    const id = Number(params.id);
+    const id = Number(req.url.split("/").pop());
     if (isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
     }
