@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { HistoriPelanggaran } from "@/types/histori_pelanggaran";
 
+const API_KEY = process.env.API_KEY || "Y2KpV7!M@x5N#X&dL9F8eT$B*CwR3hJ";
+
 const prisma = new PrismaClient();
 
 // Validasi schema dengan Zod
@@ -15,7 +17,7 @@ const pelanggaranSchema = z.object({
   image: z.string().nullable().optional(),
 });
 
-// **GET ALL PELANGGARAN with Search, Date Filter, Pagination & Include RaspberryPi**
+// ✅ **GET: Tidak membutuhkan API Key**
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -32,7 +34,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Validasi rentang tanggal jika ada
     let dateFilter: any = {};
     if (startDate && !isNaN(Date.parse(startDate))) {
       dateFilter.gte = new Date(startDate);
@@ -41,7 +42,6 @@ export async function GET(req: Request) {
       dateFilter.lte = new Date(endDate);
     }
 
-    // Filter pencarian
     let searchFilter: any = {};
     if (query) {
       searchFilter.OR = [
@@ -51,7 +51,6 @@ export async function GET(req: Request) {
       ];
     }
 
-    // Hitung total data sesuai filter
     const totalPelanggaran = await prisma.histori_pelanggaran.count({
       where: {
         ...searchFilter,
@@ -59,12 +58,10 @@ export async function GET(req: Request) {
       },
     });
 
-    // Pastikan halaman tidak melebihi total
     const totalPages = Math.max(Math.ceil(totalPelanggaran / limit), 1);
     const currentPage = Math.min(page, totalPages);
     const skip = (currentPage - 1) * limit;
 
-    // Ambil data sesuai filter
     const pelanggaran = await prisma.histori_pelanggaran.findMany({
       where: {
         ...searchFilter,
@@ -96,6 +93,50 @@ export async function GET(req: Request) {
     console.error("Error fetching pelanggaran:", error);
     return NextResponse.json(
       { error: "Gagal mengambil data pelanggaran" },
+      { status: 500 }
+    );
+  }
+}
+
+// ✅ **POST: Harus menyertakan API Key**
+export async function POST(req: Request) {
+  try {
+    // 🔒 Cek API Key terlebih dahulu
+    const apiKeyHeader = req.headers.get("X-API-KEY");
+
+    if (!apiKeyHeader || apiKeyHeader !== API_KEY) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+
+    // Validasi data dengan Zod
+    const validation = pelanggaranSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validasi gagal", details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
+    // Simpan data ke database
+    const newPelanggaran = await prisma.histori_pelanggaran.create({
+      data: {
+        waktu_pelanggaran: new Date(body.waktu_pelanggaran),
+        jenis_pelanggaran: body.jenis_pelanggaran,
+        id_raspberrypi: body.id_raspberrypi || null,
+        image: body.image || null,
+      },
+    });
+
+    return NextResponse.json(
+      { message: "Pelanggaran berhasil disimpan", data: newPelanggaran },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Error creating pelanggaran:", error);
+    return NextResponse.json(
+      { error: "Gagal menyimpan data pelanggaran" },
       { status: 500 }
     );
   }
