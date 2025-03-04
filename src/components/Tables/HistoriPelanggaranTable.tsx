@@ -87,7 +87,7 @@ const HistoriPelanggaranTable = () => {
                       <Image
                         width={250}
                         height={250}
-                        image={{ src: item.image, title: "pelanggaran" }}
+                        image={{ src: item.image, alt:"Pelanggaran Gambar", title: "pelanggaran" }}
                       />
                     ) : (
                       <span className="text-gray-500">Tidak ada gambar</span>
