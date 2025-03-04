@@ -4,13 +4,19 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from '@/auth.config';
 import bcrypt from "bcryptjs";
 
+
+const BASE_URL = process.env.AUTH_URL || "http://localhost:3000";
+
+
 const signInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
 async function getUser(email: string) {
-  const response = await fetch(`http://localhost:3000/api/admin/login?email=${email}`);
+
+  const response = await fetch(`${BASE_URL}/api/admin/login?email=${email}`);
+
   if (!response.ok) return null;
   return response.json();
 }

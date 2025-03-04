@@ -55,9 +55,11 @@ const HistoriPelanggaranTable = () => {
   }
 
   return (
-    <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-      <div className="w-full overflow-x-auto">
-        <table className="w-full table-auto">
+
+    <div className="rounded-sm border  border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="w-full overflow-auto  ">
+        <table className="w-full table-auto ">
+
           <thead>
             <tr className="bg-gray-2 text-left dark:bg-meta-4">
               <th className="px-4 py-3 text-sm font-medium text-black dark:text-white">ID</th>
@@ -87,7 +89,8 @@ const HistoriPelanggaranTable = () => {
                       <Image
                         width={250}
                         height={250}
-                        image={{ src: item.image, title: "pelanggaran" }}
+                        image={{ src: item.image, alt:"Pelanggaran Gambar", title: "pelanggaran" }}
+
                       />
                     ) : (
                       <span className="text-gray-500">Tidak ada gambar</span>

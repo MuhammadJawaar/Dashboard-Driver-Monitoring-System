@@ -1,17 +1,11 @@
 import Image from "next/image";
+import { getBusData } from "@/lib/ApiCall/bus";
 
-async function getBusData() {
-  const res = await fetch("http://localhost:3000/api/bus", {
-    cache: "no-store", // Pastikan data selalu up-to-date
-  });
-  if (!res.ok) {
-    throw new Error("Failed to fetch bus data");
-  }
-  return res.json();
-}
+
 
 const TableOne = async () => {
   const buses = await getBusData();
+
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">

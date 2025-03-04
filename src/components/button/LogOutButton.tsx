@@ -27,7 +27,9 @@ const LogoutButton = () => {
   return (
     <button
       onClick={handleLogout}
-      className="flex items-center gap-3.5 px-6 py-4 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+
+      className="flex items-center gap-1 px-6 py-0 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+
     >
       <svg
         className="fill-current"

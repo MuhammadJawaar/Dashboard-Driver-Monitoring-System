@@ -8,7 +8,9 @@ const options: ApexOptions = {
     type: "donut",
   },
   colors: ["#3C50E0", "#6577F3", "#8FD0EF"],
-  labels: ["Mengantuk", "Terdistraksi", "Menguap"],
+
+  labels: ["Mengantuk", "Menguap", "Terdistraksi"],
+
   legend: {
     show: false,
   },

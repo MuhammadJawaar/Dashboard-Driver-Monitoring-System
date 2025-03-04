@@ -1,7 +1,9 @@
 import { RaspberryPi } from "@/types/raspberrypi";
 import { RaspberryPiInput } from "@/types/raspberrypi";
 
-const BASE_URL = "http://localhost:3000/api/raspberrypi"; // Sesuaikan dengan environment API
+
+const BASE_URL = process.env.AUTH_URL || "http://localhost:3000"; 
+
 
 // GET Semua Raspberry Pi
 export async function getRaspberryPiData(): Promise<RaspberryPi[]> {
