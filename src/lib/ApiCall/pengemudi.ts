@@ -1,12 +1,14 @@
 import { Pengemudi } from "@/types/pengemudi";
 import { PengemudiInput } from "@/types/pengemudi";
 
+
 const BASE_URL = process.env.AUTH_URL || "http://localhost:3000";
 
 // GET Semua Pengemudi
 export async function getPengemudiData(): Promise<Pengemudi[]> {
   try {
     const res = await fetch(`{BASE_URL}/api/pengemudi`, { cache: "no-store" });
+
 
     if (!res.ok) {
       throw new Error("Failed to fetch pengemudi data");
@@ -21,7 +23,9 @@ export async function getPengemudiData(): Promise<Pengemudi[]> {
 
 // GET Pengemudi By ID
 export async function getPengemudiById(id: string): Promise<Pengemudi> {
+
   const res = await fetch(`${BASE_URL}/api/pengemudi/${id}`, {
+
     cache: "no-store",
   });
 
@@ -34,7 +38,9 @@ export async function getPengemudiById(id: string): Promise<Pengemudi> {
 
 // CREATE Pengemudi (POST)
 export async function createPengemudi(pengemudiData: PengemudiInput): Promise<Pengemudi> {
+
     const res = await fetch(`${BASE_URL}/api/pengemudi`, {
+
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(pengemudiData),
@@ -51,7 +57,9 @@ export async function createPengemudi(pengemudiData: PengemudiInput): Promise<Pe
 
 // UPDATE Pengemudi (PUT)
 export async function updatePengemudi(id: string, updatedData: Partial<Omit<Pengemudi, "id">>): Promise<Pengemudi> {
+
   const res = await fetch(`${BASE_URL}/api/pengemudi/${id}`, {
+
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updatedData),
@@ -68,7 +76,9 @@ export async function updatePengemudi(id: string, updatedData: Partial<Omit<Peng
 
 // DELETE Pengemudi By ID
 export async function deletePengemudiById(id: string): Promise<void> {
+
   const res = await fetch(`${BASE_URL}/api/pengemudi/${id}`, {
+
     method: "DELETE",
   });
 
