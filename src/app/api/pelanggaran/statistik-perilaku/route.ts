@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     // Daftar kategori pelanggaran yang harus selalu ada
+
     const defaultCategories = ["Drowsiness", "yawn", "Distraction"];
 
     // Ambil total pelanggaran per kategori tanpa batasan tahun

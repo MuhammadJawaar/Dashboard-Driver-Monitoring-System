@@ -61,7 +61,6 @@ const DropdownUser = () => {
             <LogoutButton/>
             </li>
           </ul>
-
         </div>
       )}
       {/* <!-- Dropdown End --> */}
