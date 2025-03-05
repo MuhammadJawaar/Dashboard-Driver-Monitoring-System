@@ -28,7 +28,7 @@ const options: ApexOptions = {
     style: {
       fontSize: "14px",
       fontWeight: "bold",
-      colors: ["#fff"],
+      colors: ["#ffffff"],
     },
   },
   responsive: [
