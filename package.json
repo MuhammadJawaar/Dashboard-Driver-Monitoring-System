@@ -54,6 +54,6 @@
     "@types/react-dom": "19.0.3"
   },
   "engines": {
-    "node": "22.14.0"
+    "node": "20.18.3"
   }
 }
