@@ -52,8 +52,5 @@
   "resolutions": {
     "@types/react": "16.9.23",
     "@types/react-dom": "19.0.3"
-  },
-  "engines": {
-    "node": "20.18.3"
   }
 }
