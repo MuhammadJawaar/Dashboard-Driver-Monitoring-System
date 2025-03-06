@@ -7,10 +7,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <SessionProvider refetchInterval={0}>
+
           {children}
           <ToastThemeProvider />
-        </SessionProvider>
+
       </body>
     </html>
   );

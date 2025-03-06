@@ -1,23 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useSession, getSession } from "next-auth/react";
 import ClickOutside from "@/components/ClickOutside";
 import LogoutButton from "@/components/button/LogOutButton";
+import { Session } from "next-auth";
 
-const DropdownUser = () => {
+const DropdownUser = ({ session }: { session: Session | null }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { data: session, update } = useSession(); // `update()` untuk refresh session
-
-  useEffect(() => {
-    const refreshSession = async () => {
-      await getSession(); // Memaksa pembaruan session
-      await update(); // Memperbarui session di UI
-    };
-    refreshSession();
-  }, []);
-
   const nama = session?.user?.nama || "Guest";
 
   return (
@@ -28,11 +18,10 @@ const DropdownUser = () => {
         href="#"
       >
         <span className="hidden text-right lg:block">
-        <span className="block text-sm font-medium text-black dark:text-white">
+          <span className="block text-sm font-medium text-black dark:text-white">
             {nama}
           </span>
         </span>
-
 
         <svg
           className="hidden fill-current sm:block"
@@ -58,7 +47,7 @@ const DropdownUser = () => {
         >
           <ul className="flex flex-col gap-5 border-b border-stroke px-6 py-7.5 dark:border-strokedark">
             <li>
-            <LogoutButton/>
+              <LogoutButton />
             </li>
           </ul>
         </div>
