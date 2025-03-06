@@ -1,8 +1,8 @@
 'use server';
- 
+
 import { signIn } from '../../auth';
 import { AuthError } from 'next-auth';
- 
+
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData,
@@ -10,14 +10,18 @@ export async function authenticate(
   try {
     await signIn('credentials', formData);
   } catch (error) {
+    console.error('Authentication Error:', error);
+
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return 'Invalid credentials.';
+          return 'Invalid username or password. Please try again.';
         default:
-          return 'Something went wrong.';
+          return `Authentication failed: ${error.type}`;
       }
     }
-    throw error;
+
+    // Handle other unexpected errors
+    return 'An unexpected error occurred. Please try again later.';
   }
 }
