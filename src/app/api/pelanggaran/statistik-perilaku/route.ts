@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // Daftar kategori pelanggaran yang harus selalu ada
 
-    const defaultCategories = ["Drowsiness", "yawn", "Distraction"];
+    const defaultCategories = ["drowsiness", "yawn", "distraction"];
 
     // Ambil total pelanggaran per kategori tanpa batasan tahun
     const data = await prisma.histori_pelanggaran.groupBy({

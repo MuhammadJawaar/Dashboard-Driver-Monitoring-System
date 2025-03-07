@@ -35,7 +35,7 @@ export async function GET() {
         dataPelanggaran.drowsiness[bulan] += 1;
       } else if (item.jenis_pelanggaran.toLowerCase() === "yawn") {
         dataPelanggaran.yawn[bulan] += 1;
-      } else if (item.jenis_pelanggaran.toLowerCase() === "distracted") {
+      } else if (item.jenis_pelanggaran.toLowerCase() === "distraction") {
         dataPelanggaran.distracted[bulan] += 1;
       }
     });
