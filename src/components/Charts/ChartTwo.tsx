@@ -80,7 +80,7 @@ const ChartTwo: React.FC = () => {
         setSeries([
           { name: "Mengantuk", data: data.drowsiness || Array(12).fill(0) },
           { name: "Menguap", data: data.yawn || Array(12).fill(0) },
-          { name: "Terdistraksi", data: data.distracted || Array(12).fill(0) },
+          { name: "Terdistraksi", data: data.distraction || Array(12).fill(0) },
         ]);
       } catch (error) {
         console.error("Error fetching violation data:", error);

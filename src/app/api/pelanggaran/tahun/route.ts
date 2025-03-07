@@ -25,7 +25,7 @@ export async function GET() {
     const dataPelanggaran = {
       drowsiness: Array(12).fill(0),
       yawn: Array(12).fill(0),
-      distracted: Array(12).fill(0),
+      distraction: Array(12).fill(0),
     };
 
     // Proses data untuk dikelompokkan berdasarkan bulan
@@ -36,7 +36,7 @@ export async function GET() {
       } else if (item.jenis_pelanggaran.toLowerCase() === "yawn") {
         dataPelanggaran.yawn[bulan] += 1;
       } else if (item.jenis_pelanggaran.toLowerCase() === "distraction") {
-        dataPelanggaran.distracted[bulan] += 1;
+        dataPelanggaran.distraction[bulan] += 1;
       }
     });
 
