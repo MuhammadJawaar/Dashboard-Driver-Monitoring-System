@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import { Pengemudi } from "@/types/pengemudi"; // Import interface
-import { getToken } from "next-auth/jwt"
+import { ensureAuth } from "@/lib/authApi";
 
 const prisma = new PrismaClient();
 
@@ -20,7 +20,8 @@ const pengemudiSchema = z.object({
 // **GET ALL PENGEMUDI with Search & Pagination**
 export async function GET(req: Request) {
   try {
-    
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
@@ -84,6 +85,8 @@ export async function GET(req: Request) {
 // **CREATE A NEW PENGEMUDI**
 export async function POST(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const body = await req.json();
     console.log("Received Body:", body); // Debugging
 

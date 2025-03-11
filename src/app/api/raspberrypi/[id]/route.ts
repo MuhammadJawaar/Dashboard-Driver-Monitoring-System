@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
-
+import { ensureAuth } from "@/lib/authApi";
 const prisma = new PrismaClient();
 
 // Schema validasi untuk update
@@ -13,6 +13,8 @@ const raspberryPiSchema = z.object({
 // **GET RaspberryPi by ID**
 export async function GET(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const id = Number(req.url.split("/").pop()); // Gunakan context.params.id
     if (isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
@@ -39,6 +41,8 @@ export async function GET(req: Request) {
 // **UPDATE RaspberryPi by ID**
 export async function PUT(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const id = Number(req.url.split("/").pop());
     if (isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
@@ -78,6 +82,8 @@ export async function PUT(req: Request) {
 // **DELETE RaspberryPi by ID**
 export async function DELETE(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const id = Number(req.url.split("/").pop());
     if (isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });

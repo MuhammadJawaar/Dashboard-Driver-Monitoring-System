@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { auth } from "../../../../../auth"
+import { ensureAuth } from "@/lib/authApi";
 import { z } from "zod";
 
 const prisma = new PrismaClient();
@@ -16,6 +16,9 @@ const updateAdminSchema = z.object({
 // **GET Admin BY ID**
 export async function GET(req: Request){
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const id = req.url.split("/").pop();
   
     const admin = await prisma.admin.findUnique({
@@ -36,6 +39,9 @@ export async function GET(req: Request){
 // **UPDATE Admin BY ID**
 export async function PUT(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const id = req.url.split("/").pop();
     const body = await req.json();
 
@@ -71,10 +77,9 @@ export async function DELETE(req: Request ) {
   
 
   try {
-    const session = await auth()
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
 
     const id = req.url.split("/").pop();
 

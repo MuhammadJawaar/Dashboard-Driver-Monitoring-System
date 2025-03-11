@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { ensureAuth } from "@/lib/authApi";
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,9 @@ const busUpdateSchema = z.object({
 // **GET BUS BY ID**
 export async function GET(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const id = req.url.split("/").pop(); // Ambil ID dari URL
 
     if (!id) {
@@ -41,6 +45,9 @@ export async function GET(req: Request) {
 // **UPDATE BUS BY ID**
 export async function PUT(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const id = req.url.split("/").pop();
 
     if (!id) {
@@ -82,6 +89,9 @@ export async function PUT(req: Request) {
 // **DELETE BUS BY ID**
 export async function DELETE(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const id = req.url.split("/").pop();
 
     if (!id) {

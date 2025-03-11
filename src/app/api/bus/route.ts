@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import { Bus } from "@/types/bus"; // Import interface
-
+import { ensureAuth } from "@/lib/authApi";
 const prisma = new PrismaClient();
 
 // Validasi schema dengan Zod
@@ -20,6 +20,9 @@ const busSchema = z.object({
 // **GET ALL BUSES with Search & Pagination**
 export async function GET(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+    
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
@@ -81,6 +84,8 @@ export async function GET(req: Request) {
 // **CREATE A NEW BUS**
 export async function POST(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
     const body = await req.json();
 
     if (!body || Object.keys(body).length === 0) {

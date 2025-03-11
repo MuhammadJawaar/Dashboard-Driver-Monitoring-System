@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { HistoriPelanggaran } from "@/types/histori_pelanggaran";
+import { ensureAuth } from "@/lib/authApi";
 
 const API_KEY = process.env.API_KEY || "Y2KpV7!M@x5N#X&dL9F8eT$B*CwR3hJ";
 
@@ -20,6 +20,8 @@ const pelanggaranSchema = z.object({
 // ✅ **GET: Tidak membutuhkan API Key**
 export async function GET(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;

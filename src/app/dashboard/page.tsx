@@ -10,10 +10,8 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <>
-
-        <ECommerce />
-
-    </>
+    <div className="min-h-screen">
+      <ECommerce />
+    </div>
   );
 }

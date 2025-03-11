@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import { Admin } from "@/types/admin";
+import { ensureAuth } from "@/lib/authApi";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,9 @@ const adminSchema = z.object({
 // **GET ALL admin with Search & Pagination**
 export async function GET(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
@@ -77,6 +81,8 @@ export async function GET(req: Request) {
 // **CREATE A NEW admin**
 export async function POST(req: Request) {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
     const body = await req.json();
     console.log("Received Body:", body);
 

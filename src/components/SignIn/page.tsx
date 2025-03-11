@@ -11,7 +11,7 @@ const SignIn: React.FC = () => {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [errorMessage, formAction, isPending] = useActionState(
     authenticate,
-    undefined
+    undefined,
   );
 
   return (
@@ -37,15 +37,12 @@ const SignIn: React.FC = () => {
                 />
               </Link>
 
-              <p className="2xl:px-20">
-                Sistem Monitoring Bus Dipyo
-              </p>
+              <p className="2xl:px-20">Sistem Monitoring Bus Dipyo</p>
             </div>
           </div>
 
           <div className="w-full border-stroke dark:border-strokedark xl:w-1/2 xl:border-l-2">
             <div className="w-full p-4 sm:p-12.5 xl:p-17.5">
-              
               <h2 className="mb-9 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
                 Sign In
               </h2>
@@ -85,14 +82,14 @@ const SignIn: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90"
-                aria-disabled={isPending}
+                className="w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isPending}
               >
-                Sign In
+                {isPending ? "Signing in..." : "Sign In"}
               </button>
-              
+
               <div
-                className="flex h-8 items-end space-x-1 mt-4"
+                className="mt-4 flex h-8 items-end space-x-1"
                 aria-live="polite"
                 aria-atomic="true"
               >
@@ -100,9 +97,8 @@ const SignIn: React.FC = () => {
                   <p className="text-sm text-red-500">{errorMessage}</p>
                 )}
               </div>
-              
-              <div className="mt-6 text-center">
-              </div>
+
+              <div className="mt-6 text-center"></div>
             </div>
           </div>
         </div>

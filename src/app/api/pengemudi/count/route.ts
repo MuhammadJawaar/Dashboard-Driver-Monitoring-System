@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-
+import { ensureAuth } from "@/lib/authApi";
 const prisma = new PrismaClient();
 
 // **GET TOTAL COUNT OF PENGEMUDI**
 export async function GET() {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;
+
     const totalPengemudi = await prisma.pengemudi.count();
     return NextResponse.json({ totalPengemudi });
   } catch (error) {

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-
+import { ensureAuth } from "@/lib/authApi";
 const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    const session = await ensureAuth();
+    if (session instanceof NextResponse) return session;    
     const totalPelanggaran = await prisma.histori_pelanggaran.count();
     
     return NextResponse.json({ totalPelanggaran });

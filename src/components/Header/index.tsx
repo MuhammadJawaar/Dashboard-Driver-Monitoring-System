@@ -61,12 +61,7 @@ const Header = ({
           {/* <!-- Hamburger Toggle BTN --> */}
 
           <Link className="block flex-shrink-0 lg:hidden" href="/">
-            <Image
-              width={32}
-              height={32}
-              src={"/images/logo/logo-icon.svg"}
-              alt="Logo"
-            />
+            <Image width={32} height={32} src={"/images/log.png"} alt="Logo" />
           </Link>
         </div>
 
