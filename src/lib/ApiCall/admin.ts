@@ -1,7 +1,7 @@
 import { Admin } from "@/types/admin";
 import { AdminInput } from "@/types/admin";
 
-const BASE_URL = process.env.AUTH_URL || "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 // GET Semua Admin
 export async function getAdminData(): Promise<Admin[]> {

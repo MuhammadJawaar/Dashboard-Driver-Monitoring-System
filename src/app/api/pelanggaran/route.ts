@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { ensureAuth } from "@/lib/authApi";
 
-const API_KEY = process.env.API_KEY || "Y2KpV7!M@x5N#X&dL9F8eT$B*CwR3hJ";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 const prisma = new PrismaClient();
 

@@ -2,13 +2,13 @@ import { RaspberryPi } from "@/types/raspberrypi";
 import { RaspberryPiInput } from "@/types/raspberrypi";
 
 
-const BASE_URL = process.env.AUTH_URL || "http://localhost:3000"; 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 
 // GET Semua Raspberry Pi
 export async function getRaspberryPiData(): Promise<RaspberryPi[]> {
   try {
-    const res = await fetch(BASE_URL, { cache: "no-store" });
+    const res = await fetch(`${BASE_URL}/api/raspberrypi`, { cache: "no-store" });
 
     if (!res.ok) {
       throw new Error("Failed to fetch Raspberry Pi data");
@@ -23,7 +23,7 @@ export async function getRaspberryPiData(): Promise<RaspberryPi[]> {
 
 // GET Raspberry Pi By ID
 export async function getRaspberryPiById(id: string): Promise<RaspberryPi> {
-  const res = await fetch(`${BASE_URL}/${id}`, { cache: "no-store" });
+  const res = await fetch(`${BASE_URL}/api/raspberrypi/${id}`, { cache: "no-store" });
 
   if (!res.ok) {
     throw new Error("Failed to fetch Raspberry Pi data");
@@ -34,7 +34,7 @@ export async function getRaspberryPiById(id: string): Promise<RaspberryPi> {
 
 // CREATE Raspberry Pi (POST)
 export async function createRaspberryPi(raspberryData: RaspberryPiInput): Promise<RaspberryPi> {
-  const res = await fetch(BASE_URL, {
+  const res = await fetch(`${BASE_URL}/api/raspberrypi`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(raspberryData),
