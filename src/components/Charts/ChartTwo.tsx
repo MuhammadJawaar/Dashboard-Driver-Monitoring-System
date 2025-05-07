@@ -35,13 +35,21 @@ const options: ApexOptions = {
       borderRadiusWhenStacked: "last",
     },
   },
-  
   dataLabels: { enabled: false },
-  
   xaxis: {
     categories: [
-      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agu",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
     ],
   },
   legend: {
@@ -53,11 +61,7 @@ const options: ApexOptions = {
   },
   fill: { opacity: 1 },
   tooltip: {
-    marker: {
-      show: false,
-       // Mengurangi ukuran bullet pada tooltip
-    },
-    
+    marker: { show: false },
   },
 };
 
@@ -67,12 +71,19 @@ const ChartTwo: React.FC = () => {
     { name: "Menguap", data: Array(12).fill(0) },
     { name: "Terdistraksi", data: Array(12).fill(0) },
   ]);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [availableYears, setAvailableYears] = useState<number[]>([
+    currentYear - 2,
+    currentYear - 1,
+    currentYear,
+  ]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching violation data...");
-        const res = await fetch("/api/pelanggaran/tahun");
+        console.log("Fetching violation data for year:", selectedYear);
+        const res = await fetch(`/api/pelanggaran/tahun?year=${selectedYear}`);
         if (!res.ok) throw new Error("Failed to fetch violation data");
         const data = await res.json();
         console.log("Violation data:", data);
@@ -88,16 +99,25 @@ const ChartTwo: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [selectedYear]);
 
   return (
     <div className="col-span-12 rounded-sm border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-4">
-      <div className="mb-4 justify-between gap-4 sm:flex">
-        <div>
-          <h4 className="text-xl font-semibold text-black dark:text-white">
-            Pelanggaran per Bulan (1 Tahun)
-          </h4>
-        </div>
+      <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <h4 className="text-xl font-semibold text-black dark:text-white">
+          Pelanggaran per Bulan ({selectedYear})
+        </h4>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(Number(e.target.value))}
+          className="rounded border border-gray-300 px-3 py-1 text-sm dark:bg-boxdark dark:text-white"
+        >
+          {availableYears.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>

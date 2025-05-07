@@ -3,18 +3,47 @@ import { PrismaClient } from "@prisma/client";
 import { ensureAuth } from "@/lib/authApi";
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
-    // Daftar kategori pelanggaran yang harus selalu ada
+    if (session instanceof NextResponse) return session;
 
+    // Daftar kategori pelanggaran yang harus selalu ada
     const defaultCategories = ["drowsiness", "yawn", "distraction"];
 
-    // Ambil total pelanggaran per kategori tanpa batasan tahun
+    // Ambil parameter tahun dan bulan dari query string
+    const url = new URL(request.url);
+    const year = parseInt(url.searchParams.get("tahun") || "", 10); // tahun yang dipilih
+    const month = parseInt(url.searchParams.get("bulan") || "", 10); // bulan yang dipilih
+
+    // Filter data berdasarkan tahun dan bulan jika tersedia
+    let whereCondition = {};
+
+    if (year && month) {
+      // Jika tahun dan bulan ada, filter berdasarkan bulan tertentu
+      whereCondition = {
+        createdAt: {
+          gte: new Date(year, month - 1, 1), // Mulai dari bulan yang dipilih
+          lt: new Date(year, month, 1), // Sebelum bulan berikutnya
+        },
+      };
+    } else if (year) {
+      // Jika hanya tahun yang ada, filter seluruh tahun
+      whereCondition = {
+        createdAt: {
+          gte: new Date(year, 0, 1), // Mulai dari Januari
+          lt: new Date(year + 1, 0, 1), // Sebelum tahun berikutnya (Desember)
+        },
+      };
+    }
+
+    // Ambil total pelanggaran per kategori sesuai dengan filter yang ada
     const data = await prisma.histori_pelanggaran.groupBy({
       by: ["jenis_pelanggaran"],
-      _count: { jenis_pelanggaran: true },
+      where: whereCondition,
+      _count: {
+        jenis_pelanggaran: true,
+      },
     });
 
     // Buat map dari hasil query

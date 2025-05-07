@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { ensureAuth } from "@/lib/authApi";
+
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1); // 1 Januari tahun ini
+    if (session instanceof NextResponse) return session;
 
-    // Ambil data pelanggaran dalam 12 bulan terakhir
+    const { searchParams } = new URL(req.url);
+    const year = parseInt(searchParams.get("year") || "");
+
+    const targetYear = !isNaN(year) ? year : new Date().getFullYear();
+    const startOfYear = new Date(targetYear, 0, 1); // 1 Jan
+    const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999); // 31 Dec
+
     const pelanggaran = await prisma.histori_pelanggaran.findMany({
       where: {
         waktu_pelanggaran: {
           gte: startOfYear,
+          lte: endOfYear,
         },
       },
       select: {
@@ -23,23 +29,19 @@ export async function GET() {
       },
     });
 
-    // Inisialisasi array kosong untuk tiap kategori
     const dataPelanggaran = {
       drowsiness: Array(12).fill(0),
       yawn: Array(12).fill(0),
       distraction: Array(12).fill(0),
     };
 
-    // Proses data untuk dikelompokkan berdasarkan bulan
     pelanggaran.forEach((item) => {
-      const bulan = new Date(item.waktu_pelanggaran).getMonth(); // Ambil bulan (0-11)
-      if (item.jenis_pelanggaran.toLowerCase() === "drowsiness") {
-        dataPelanggaran.drowsiness[bulan] += 1;
-      } else if (item.jenis_pelanggaran.toLowerCase() === "yawn") {
-        dataPelanggaran.yawn[bulan] += 1;
-      } else if (item.jenis_pelanggaran.toLowerCase() === "distraction") {
-        dataPelanggaran.distraction[bulan] += 1;
-      }
+      const bulan = new Date(item.waktu_pelanggaran).getMonth(); // 0-11
+      const jenis = item.jenis_pelanggaran.toLowerCase();
+
+      if (jenis === "drowsiness") dataPelanggaran.drowsiness[bulan]++;
+      else if (jenis === "yawn") dataPelanggaran.yawn[bulan]++;
+      else if (jenis === "distraction") dataPelanggaran.distraction[bulan]++;
     });
 
     return NextResponse.json(dataPelanggaran);

@@ -21,7 +21,8 @@ const pelanggaranSchema = z.object({
 export async function GET(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
+    if (session instanceof NextResponse) return session;
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
@@ -37,26 +38,52 @@ export async function GET(req: Request) {
     }
 
     let dateFilter: any = {};
+    let parsedStartDate: Date | null = null;
+    let parsedEndDate: Date | null = null;
+
     if (startDate && !isNaN(Date.parse(startDate))) {
-      dateFilter.gte = new Date(startDate);
+      parsedStartDate = new Date(startDate);
+      dateFilter.gte = parsedStartDate;
     }
+
     if (endDate && !isNaN(Date.parse(endDate))) {
-      dateFilter.lte = new Date(endDate);
+      parsedEndDate = new Date(endDate);
+      parsedEndDate.setHours(23, 59, 59, 999); // Set ke akhir hari
+      dateFilter.lte = parsedEndDate;
+    }
+
+    // Validasi bahwa startDate <= endDate
+    if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
+      return NextResponse.json(
+        { error: "Tanggal mulai tidak boleh lebih besar dari tanggal akhir" },
+        { status: 400 }
+      );
     }
 
     let searchFilter: any = {};
     if (query) {
       searchFilter.OR = [
         { jenis_pelanggaran: { contains: query, mode: "insensitive" } },
-        { id_raspberrypi: { equals: isNaN(Number(query)) ? undefined : Number(query) } },
-        { raspberrypi: { pengemudi: { nama: { contains: query, mode: "insensitive" } } } },
+        {
+          id_raspberrypi: {
+            equals: isNaN(Number(query)) ? undefined : Number(query),
+          },
+        },
+        {
+          raspberrypi: {
+            pengemudi: {
+              nama: { contains: query, mode: "insensitive" },
+            },
+          },
+        },
       ];
     }
 
     const totalPelanggaran = await prisma.histori_pelanggaran.count({
       where: {
         ...searchFilter,
-        waktu_pelanggaran: Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
+        waktu_pelanggaran:
+          Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
       },
     });
 
@@ -67,7 +94,8 @@ export async function GET(req: Request) {
     const pelanggaran = await prisma.histori_pelanggaran.findMany({
       where: {
         ...searchFilter,
-        waktu_pelanggaran: Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
+        waktu_pelanggaran:
+          Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
       },
       skip,
       take: limit,
@@ -99,6 +127,7 @@ export async function GET(req: Request) {
     );
   }
 }
+
 
 // ✅ **POST: Harus menyertakan API Key**
 export async function POST(req: Request) {
