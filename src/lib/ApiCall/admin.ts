@@ -1,12 +1,12 @@
 import { Admin } from "@/types/admin";
 import { AdminInput } from "@/types/admin";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+const API_PREFIX = "/api/admin";
 
 // GET Semua Admin
 export async function getAdminData(): Promise<Admin[]> {
   try {
-    const res = await fetch(`${BASE_URL}/api/admin`, { cache: "no-store" });
+    const res = await fetch(API_PREFIX, { cache: "no-store" });
 
     if (!res.ok) {
       throw new Error("Failed to fetch admin data");
@@ -22,7 +22,7 @@ export async function getAdminData(): Promise<Admin[]> {
 // GET Admin By ID
 export async function getAdminById(id: string): Promise<Admin> {
   try {
-    const res = await fetch(`${BASE_URL}/api/admin/${id}`, { cache: "no-store" });
+    const res = await fetch(`${API_PREFIX}/${id}`, { cache: "no-store" });
 
     if (!res.ok) {
       throw new Error("Failed to fetch admin data");
@@ -38,7 +38,7 @@ export async function getAdminById(id: string): Promise<Admin> {
 // CREATE Admin (POST)
 export async function createAdmin(adminData: AdminInput): Promise<Admin> {
   try {
-    const res = await fetch(`${BASE_URL}/api/admin`, {
+    const res = await fetch(API_PREFIX, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(adminData),
@@ -59,7 +59,7 @@ export async function createAdmin(adminData: AdminInput): Promise<Admin> {
 // UPDATE Admin (PUT)
 export async function updateAdmin(id: string, updatedData: Partial<Omit<Admin, "id">>): Promise<Admin> {
   try {
-    const res = await fetch(`${BASE_URL}/api/admin/${id}`, {
+    const res = await fetch(`${API_PREFIX}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedData),
@@ -80,7 +80,7 @@ export async function updateAdmin(id: string, updatedData: Partial<Omit<Admin, "
 // DELETE Admin By ID
 export async function deleteAdminById(id: string): Promise<void> {
   try {
-    const res = await fetch(`${BASE_URL}/api/admin/${id}`, { method: "DELETE" });
+    const res = await fetch(`${API_PREFIX}/${id}`, { method: "DELETE" });
 
     if (!res.ok) {
       throw new Error("Failed to delete admin");
