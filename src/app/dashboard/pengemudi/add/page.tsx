@@ -3,16 +3,16 @@ import AddPengemudiForm from "@/components/Forms/AddPengemudiForm";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Add Pengemudi | Next.js Admin Dashboard",
+  title: "Tambah Pengemudi | DMS Dipyo",
   description: "Add Pengemudi details in the Next.js Admin Dashboard.",
 };
 
 export default function Page() {
   return (
     <div className="flex h-screen sm:grid-cols-2">
-      <div className="w-full flex flex-col gap-9">
+      <div className="flex w-full flex-col gap-9">
         <Suspense>
-        <AddPengemudiForm  /> {/* Kirim props ke Client Component */}
+          <AddPengemudiForm /> {/* Kirim props ke Client Component */}
         </Suspense>
       </div>
     </div>

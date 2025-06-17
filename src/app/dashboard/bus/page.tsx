@@ -4,7 +4,7 @@ import Search from "@/components/SearchBar/SearchBar"; // Import Search
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Bus List | Admin Dashboard",
+  title: "Daftar Bus | DMS Dipyo",
   description: "Daftar bus yang tersedia dalam sistem",
 };
 
@@ -13,13 +13,16 @@ const TablesPage = () => {
     <div className="p-6">
       <Breadcrumb pageName="Bus" />
       {/* Hilangkan celah antara search dan tabel */}
-      <div className="flex flex-col gap-0 h-screen">
+      <div className="flex h-screen flex-col gap-0">
         {/* Search bar ditempatkan langsung di atas tabel tanpa padding bawah */}
         <Suspense>
-        <Search placeholder="Cari bus..." buttonHref="/dashboard/bus/add" buttonLabel="Tambah Bus" />
-        <TableThree />
+          <Search
+            placeholder="Cari bus..."
+            buttonHref="/dashboard/bus/add"
+            buttonLabel="Tambah Bus"
+          />
+          <TableThree />
         </Suspense>
-       
       </div>
     </div>
   );
