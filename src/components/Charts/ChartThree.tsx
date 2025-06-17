@@ -1,22 +1,27 @@
-import { useEffect, useState } from "react";
-import { ApexOptions } from "apexcharts";
-import ReactApexChart from "react-apexcharts";
+"use client";
 
-// Opsi konfigurasi untuk chart
-const options: ApexOptions = {
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import type { ApexOptions } from "apexcharts";
+
+// Chart donut tanpa SSR
+const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+const LABELS = ["Mengantuk", "Menguap", "Terdistraksi"];
+const COLORS = ["#3C50E0", "#6577F3", "#8FD0EF"];
+
+const baseOptions: ApexOptions = {
   chart: {
     fontFamily: "Satoshi, sans-serif",
     type: "donut",
+    toolbar: { show: true },
   },
-  colors: ["#3C50E0", "#6577F3", "#8FD0EF"],
-  labels: ["Mengantuk", "Menguap", "Terdistraksi"],
+  colors: COLORS,
+  labels: LABELS,
   legend: { show: false },
   plotOptions: {
     pie: {
-      donut: {
-        size: "65%",
-        background: "transparent",
-      },
+      donut: { size: "65%", background: "transparent" },
     },
   },
   dataLabels: {
@@ -28,73 +33,71 @@ const options: ApexOptions = {
       colors: ["#ffffff"],
     },
   },
-  responsive: [
-    {
-      breakpoint: 640,
-      options: { chart: { width: 200 } },
-    },
-  ],
+  responsive: [{ breakpoint: 640, options: { chart: { width: 200 } } }],
 };
 
-const colors = ["#3C50E0", "#6577F3", "#8FD0EF"];
-
 const ChartThree: React.FC = () => {
-  const [series, setSeries] = useState<number[]>([0, 0, 0]);
-  const [labels, setLabels] = useState<string[]>([
-    "Mengantuk",
-    "Menguap",
-    "Terdistraksi",
-  ]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // Allow null for all months
-
-  // Get current year and previous years
   const currentYear = new Date().getFullYear();
-  const years = [currentYear, currentYear - 1, currentYear - 2]; // Tahun sekarang dan dua tahun sebelumnya
+  const [year, setYear] = useState<number | "all">("all");
+  const [month, setMonth] = useState<number | null>(null);
+  const [driverId, setDriverId] = useState<string | "all">("all");
+  const [drivers, setDrivers] = useState<{ id: string; nama: string }[]>([]);
+  const [series, setSeries] = useState<number[]>([0, 0, 0]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch data based on selected year and month
-  const fetchData = async (year: number | "all", month: number | null) => {
-    setLoading(true);
-    setError(null);
-    try {
-      let url = `/api/pelanggaran/statistik-perilaku?tahun=${year}`;
-      if (month !== null) {
-        url += `&bulan=${month}`;
-      }
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Gagal mengambil data");
-
-      const data = await response.json();
-      setLabels(data.labels || ["Mengantuk", "Menguap", "Terdistraksi"]);
-      setSeries(data.series || [0, 0, 0]);
-    } catch (err) {
-      setError("Gagal mengambil data statistik");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const years = [currentYear, currentYear - 1, currentYear - 2];
 
   useEffect(() => {
-    fetchData(selectedYear, selectedMonth);
-  }, [selectedYear, selectedMonth]);
+    const fetchDrivers = async () => {
+      try {
+        const res = await fetch("/api/pengemudi/list");
+        const data = await res.json();
+        setDrivers(data || []);
+      } catch (err) {
+        console.error("Gagal mengambil daftar pengemudi", err);
+      }
+    };
+    fetchDrivers();
+  }, []);
+
+  useEffect(() => {
+    const fetchStatistik = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let url = `/api/pelanggaran/statistik-perilaku?granularity=${
+          month === null ? "monthly" : "daily"
+        }`;
+        if (year !== "all") url += `&year=${year}`;
+        if (month !== null) url += `&month=${month}`;
+        if (driverId !== "all") url += `&driverId=${driverId}`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Gagal mengambil data");
+        const data = await res.json();
+
+        setSeries(data.series ?? [0, 0, 0]);
+      } catch (err) {
+        console.error(err);
+        setError("Gagal mengambil data statistik");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStatistik();
+  }, [year, month, driverId]);
 
   return (
-    <div className="col-span-12 rounded-lg border border-stroke bg-white p-6 shadow-md dark:border-strokedark dark:bg-boxdark sm:px-8 xl:col-span-5">
-      {/* Header */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h5 className="text-lg font-semibold text-black dark:text-white">
-          Statistik Perilaku Pengemudi
-        </h5>
-        {/* Filters */}
-        <div className="mt-2 flex gap-2 sm:mt-0">
+    <div className="col-span-12 rounded-lg border border-stroke bg-white p-6 shadow-md dark:border-strokedark dark:bg-boxdark xl:col-span-5">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h5 className="text-lg font-semibold text-black dark:text-white">Statistik Perilaku Pengemudi</h5>
+        <div className="flex flex-wrap gap-2">
           <select
+            value={month ?? ""}
+            onChange={(e) => setMonth(e.target.value ? Number(e.target.value) : null)}
             className="rounded border px-2 py-1 text-sm dark:bg-boxdark dark:text-white"
-            value={selectedMonth ?? ""}
-            onChange={(e) =>
-              setSelectedMonth(e.target.value ? Number(e.target.value) : null)
-            }
           >
             <option value="">Semua Bulan</option>
             {Array.from({ length: 12 }, (_, i) => (
@@ -103,46 +106,46 @@ const ChartThree: React.FC = () => {
               </option>
             ))}
           </select>
+
           <select
+            value={year}
+            onChange={(e) => setYear(e.target.value === "all" ? "all" : Number(e.target.value))}
             className="rounded border px-2 py-1 text-sm dark:bg-boxdark dark:text-white"
-            value={selectedYear === "all" ? "" : selectedYear} // If "all", show empty value
-            onChange={(e) =>
-              setSelectedYear(e.target.value ? Number(e.target.value) : "all")
-            }
           >
             <option value="all">Semua Tahun</option>
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
+            {years.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+
+          <select
+            value={driverId}
+            onChange={(e) => setDriverId(e.target.value)}
+            className="rounded border px-2 py-1 text-sm dark:bg-boxdark dark:text-white"
+          >
+            <option value="all">Semua Pengemudi</option>
+            {drivers.map((d) => (
+              <option key={d.id} value={d.id}>{d.nama}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Kondisi Loading dan Error */}
       {loading ? (
         <p className="text-center text-gray-500">Memuat data...</p>
       ) : error ? (
         <p className="text-center text-red-500">{error}</p>
       ) : (
         <>
-          {/* Chart */}
           <div className="mb-5 flex justify-center">
-            <ReactApexChart options={options} series={series} type="donut" />
+            <ReactApexChart options={baseOptions} series={series} type="donut" />
           </div>
 
-          {/* Legend */}
           <div className="flex flex-col items-center space-y-2 sm:flex-row sm:justify-center sm:space-x-6 sm:space-y-0">
-            {labels.map((label, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <span
-                  className="block h-3 w-3 rounded-full"
-                  style={{ backgroundColor: colors[index] }}
-                ></span>
-                <p className="text-sm font-medium text-black dark:text-white">
-                  {label}
-                </p>
+            {LABELS.map((label, idx) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className="block h-3 w-3 rounded-full" style={{ background: COLORS[idx] }} />
+                <p className="text-sm font-medium text-black dark:text-white">{label}</p>
               </div>
             ))}
           </div>

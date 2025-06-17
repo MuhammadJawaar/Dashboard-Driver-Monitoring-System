@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard | DMS Dipyo",
-  description: "Dashboard utama untuk mengelola aplikasi Anda",
+  description: "This Home of DMS Dipyo, a Driving Monitoring System",
 };
 
 export default function Home() {

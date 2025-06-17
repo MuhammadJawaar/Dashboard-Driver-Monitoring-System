@@ -6,49 +6,84 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
-    const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;
+    // const session = await ensureAuth();
+    // if (session instanceof NextResponse) return session;
 
     const { searchParams } = new URL(req.url);
-    const year = parseInt(searchParams.get("year") || "");
 
-    const targetYear = !isNaN(year) ? year : new Date().getFullYear();
-    const startOfYear = new Date(targetYear, 0, 1); // 1 Jan
-    const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999); // 31 Dec
+    // --- parameter -------------------------------------------------------
+    const granularity = (searchParams.get("granularity") || "monthly").toLowerCase(); // daily | monthly
+    const yearParam   = parseInt(searchParams.get("year") || "");
+    const monthParam  = parseInt(searchParams.get("month") || "");   // 1‑12
+    const driverId    = searchParams.get("driverId");                // opsional
+    // --------------------------------------------------------------------
 
+    const targetYear  = !isNaN(yearParam) ? yearParam : new Date().getFullYear();
+
+    // validasi dasar
+    if (granularity === "daily" && (isNaN(monthParam) || monthParam < 1 || monthParam > 12)) {
+      return NextResponse.json(
+        { error: "`month` (1‑12) wajib jika granularity=daily" },
+        { status: 400 }
+      );
+    }
+
+    // hitung rentang tanggal
+    let startDate: Date, endDate: Date;
+    if (granularity === "daily") {
+      startDate = new Date(targetYear, monthParam - 1, 1);
+      endDate   = new Date(targetYear, monthParam, 1);
+    } else {
+      startDate = new Date(targetYear, 0, 1);
+      endDate   = new Date(targetYear + 1, 0, 1);
+    }
+
+    // where‑clause utama
+    const where: any = {
+      waktu_pelanggaran: { gte: startDate, lt: endDate },
+    };
+
+    // filter driver → via relasi raspberrypi.id_pengemudi
+    if (driverId) {
+      where.raspberrypi = { id_pengemudi: driverId };
+    }
+
+    // tarik hanya kolom yang diperlukan
     const pelanggaran = await prisma.histori_pelanggaran.findMany({
-      where: {
-        waktu_pelanggaran: {
-          gte: startOfYear,
-          lte: endOfYear,
-        },
-      },
+      where,
       select: {
         waktu_pelanggaran: true,
         jenis_pelanggaran: true,
       },
     });
 
-    const dataPelanggaran = {
-      drowsiness: Array(12).fill(0),
-      yawn: Array(12).fill(0),
-      distraction: Array(12).fill(0),
-    };
+    // inisialisasi hasil
+    const CATEGORIES = ["drowsiness", "yawn", "distraction"] as const;
+    const result: Record<(typeof CATEGORIES)[number], number[]> = {} as any;
 
-    pelanggaran.forEach((item) => {
-      const bulan = new Date(item.waktu_pelanggaran).getMonth(); // 0-11
-      const jenis = item.jenis_pelanggaran.toLowerCase();
+    if (granularity === "daily") {
+      const daysInMonth = new Date(targetYear, monthParam, 0).getDate();
+      CATEGORIES.forEach((c) => (result[c] = Array(daysInMonth).fill(0)));
 
-      if (jenis === "drowsiness") dataPelanggaran.drowsiness[bulan]++;
-      else if (jenis === "yawn") dataPelanggaran.yawn[bulan]++;
-      else if (jenis === "distraction") dataPelanggaran.distraction[bulan]++;
-    });
+      pelanggaran.forEach(({ waktu_pelanggaran, jenis_pelanggaran }) => {
+        const dayIdx = new Date(waktu_pelanggaran).getDate() - 1;
+        const cat    = jenis_pelanggaran.toLowerCase() as keyof typeof result;
+        if (result[cat]) result[cat][dayIdx]++;
+      });
+    } else {
+      CATEGORIES.forEach((c) => (result[c] = Array(12).fill(0)));
 
-    return NextResponse.json(dataPelanggaran);
-  } catch (error) {
-    console.error("Error fetching yearly violation data:", error);
+      pelanggaran.forEach(({ waktu_pelanggaran, jenis_pelanggaran }) => {
+        const monthIdx = new Date(waktu_pelanggaran).getMonth();
+        const cat      = jenis_pelanggaran.toLowerCase() as keyof typeof result;
+        if (result[cat]) result[cat][monthIdx]++;
+      });
+    }
+
+    return NextResponse.json(result);
+  } catch (err) {
     return NextResponse.json(
-      { error: "Gagal mengambil data pelanggaran tahunan" },
+      { error: "Gagal mengambil data statistik" },
       { status: 500 }
     );
   }

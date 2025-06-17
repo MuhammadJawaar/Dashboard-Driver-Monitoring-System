@@ -1,63 +1,72 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { ensureAuth } from "@/lib/authApi";
+
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET(req: Request) {
   try {
-    const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;
+    const { searchParams } = new URL(req.url);
 
-    // Daftar kategori pelanggaran yang harus selalu ada
-    const defaultCategories = ["drowsiness", "yawn", "distraction"];
+    const granularity = (searchParams.get("granularity") || "monthly").toLowerCase();
+    const yearParam = parseInt(searchParams.get("year") || "");
+    const monthParam = parseInt(searchParams.get("month") || "");
+    const driverId = searchParams.get("driverId");
 
-    // Ambil parameter tahun dan bulan dari query string
-    const url = new URL(request.url);
-    const year = parseInt(url.searchParams.get("tahun") || "", 10); // tahun yang dipilih
-    const month = parseInt(url.searchParams.get("bulan") || "", 10); // bulan yang dipilih
+    const targetYear = !isNaN(yearParam) ? yearParam : new Date().getFullYear();
 
-    // Filter data berdasarkan tahun dan bulan jika tersedia
-    let whereCondition = {};
-
-    if (year && month) {
-      // Jika tahun dan bulan ada, filter berdasarkan bulan tertentu
-      whereCondition = {
-        createdAt: {
-          gte: new Date(year, month - 1, 1), // Mulai dari bulan yang dipilih
-          lt: new Date(year, month, 1), // Sebelum bulan berikutnya
-        },
-      };
-    } else if (year) {
-      // Jika hanya tahun yang ada, filter seluruh tahun
-      whereCondition = {
-        createdAt: {
-          gte: new Date(year, 0, 1), // Mulai dari Januari
-          lt: new Date(year + 1, 0, 1), // Sebelum tahun berikutnya (Desember)
-        },
-      };
+    if (granularity === "daily" && (isNaN(monthParam) || monthParam < 1 || monthParam > 12)) {
+      return NextResponse.json(
+        { error: "`month` (1‑12) wajib jika granularity=daily" },
+        { status: 400 }
+      );
     }
 
-    // Ambil total pelanggaran per kategori sesuai dengan filter yang ada
-    const data = await prisma.histori_pelanggaran.groupBy({
-      by: ["jenis_pelanggaran"],
-      where: whereCondition,
-      _count: {
+    let startDate: Date, endDate: Date;
+    if (granularity === "daily") {
+      startDate = new Date(targetYear, monthParam - 1, 1);
+      endDate = new Date(targetYear, monthParam, 1);
+    } else {
+      startDate = new Date(targetYear, 0, 1);
+      endDate = new Date(targetYear + 1, 0, 1);
+    }
+
+    const where: any = {
+      waktu_pelanggaran: { gte: startDate, lt: endDate },
+    };
+
+    if (driverId) {
+      where.raspberrypi = { id_pengemudi: driverId };
+    }
+
+    const pelanggaran = await prisma.histori_pelanggaran.findMany({
+      where,
+      select: {
+        waktu_pelanggaran: true,
         jenis_pelanggaran: true,
       },
     });
 
-    // Buat map dari hasil query
-    const dataMap = new Map(
-      data.map((item) => [item.jenis_pelanggaran, item._count.jenis_pelanggaran])
-    );
+    const CATEGORIES = ["drowsiness", "yawn", "distraction"] as const;
+    const counter: Record<(typeof CATEGORIES)[number], number> = {
+      drowsiness: 0,
+      yawn: 0,
+      distraction: 0,
+    };
 
-    // Pastikan semua kategori memiliki nilai, default 0 jika tidak ada di database
-    const labels = defaultCategories;
-    const series = labels.map((category) => dataMap.get(category) || 0);
+    pelanggaran.forEach(({ jenis_pelanggaran }) => {
+      const jenis = jenis_pelanggaran.toLowerCase() as keyof typeof counter;
+      if (counter[jenis] !== undefined) {
+        counter[jenis]++;
+      }
+    });
 
-    return NextResponse.json({ labels, series });
-  } catch (error) {
-    console.error("Error fetching statistik:", error);
+    const result = {
+      series: [counter["drowsiness"], counter["yawn"], counter["distraction"]],
+    };
+
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("Gagal mengambil statistik perilaku:", err);
     return NextResponse.json(
       { error: "Gagal mengambil data statistik" },
       { status: 500 }
