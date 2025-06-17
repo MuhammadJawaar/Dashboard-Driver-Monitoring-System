@@ -4,7 +4,7 @@ import Search from "@/components/SearchBar/SearchBar"; // Import Search
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Admin Dashboard",
+  title: "Admin | DMS Dipyo",
   description: "Daftar Admin yang tersedia dalam sistem",
 };
 

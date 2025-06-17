@@ -4,7 +4,7 @@ import Search from "@/components/SearchBar/SearchBar"; // Import Search
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Pengemudi List | Admin Dashboard",
+  title: "Pengemudi List | DMS Dipyo",
   description: "Daftar bus yang tersedia dalam sistem",
 };
 

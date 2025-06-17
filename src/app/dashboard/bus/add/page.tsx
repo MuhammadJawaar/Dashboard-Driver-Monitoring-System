@@ -3,7 +3,7 @@ import AddBusForm from "@/components/Forms/AddBusForm";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Add Bus | Next.js Admin Dashboard",
+  title: "tambah Bus | DMS Dipyo",
   description: "Add bus details in the Next.js Admin Dashboard.",
 };
 

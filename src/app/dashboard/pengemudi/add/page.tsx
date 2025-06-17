@@ -3,7 +3,7 @@ import AddPengemudiForm from "@/components/Forms/AddPengemudiForm";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Add Pengemudi | Next.js Admin Dashboard",
+  title: "Add Pengemudi | DMS Dipyo",
   description: "Add Pengemudi details in the Next.js Admin Dashboard.",
 };
 

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import EditPengemudiForm from "@/components/Forms/EditPengemudiForm";
 
 export const metadata: Metadata = {
-  title: "Edit Bus | Next.js Admin Dashboard",
+  title: "Edit Bus | DMS Dipyo",
   description: "Edit bus details in the Next.js Admin Dashboard.",
 };
 

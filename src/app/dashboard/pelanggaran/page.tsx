@@ -4,7 +4,7 @@ import Search from "@/components/SearchBar/SearchBarPelanggaran"; // Import Sear
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Histori Pelanggaran | Admin Dashboard",
+  title: "Histori Pelanggaran | DMS Dipyo",
   description: "Daftar histori pelanggaran dalam sistem",
 };
 

@@ -3,7 +3,7 @@ import AddAdminForm from "@/components/Forms/AddAdminForm";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Add Admin | Next.js Admin Dashboard",
+  title: "Tambah Admin | DMS Dipyo",
   description: "Add Admin details in the Next.js Admin Dashboard.",
 };
 

@@ -4,7 +4,7 @@ import Search from "@/components/SearchBar/SearchBar"; // Import Search
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Raspberry Pi List | Admin Dashboard",
+  title: "Raspberry Pi List | DMS Dipyo",
   description: "Daftar Raspberry Pi yang tersedia dalam sistem",
 };
 
