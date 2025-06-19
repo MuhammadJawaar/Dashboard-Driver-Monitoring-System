@@ -1,80 +1,110 @@
 "use client";
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { Image } from "lightbox.js-react";
+import qs from "query-string";
+import { useMemo } from "react";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error("Gagal mengambil data");
-  }
+  if (!res.ok) throw new Error("Gagal mengambil data");
   return res.json();
 };
 
-const HistoriPelanggaranTable = () => {
+export default function HistoriPelanggaranTable() {
+  // ────────────────────────────────────────────────────────────────────────────
+  // Router helpers
+  // ────────────────────────────────────────────────────────────────────────────
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const query = searchParams.get("query") || "";
+  const query = searchParams.get("query") ?? "";
   const page = Number(searchParams.get("page")) || 1;
   const limit = Number(searchParams.get("limit")) || 5;
-  const startDate = searchParams.get("startDate") || "";
-  const endDate = searchParams.get("endDate") || "";
+  const startDate = searchParams.get("startDate") ?? undefined;
+  const endDate = searchParams.get("endDate") ?? undefined;
 
-  const { data, error, isLoading } = useSWR(
-    `/api/pelanggaran?query=${query}&page=${page}&limit=${limit}&startDate=${startDate}&endDate=${endDate}`,
-    fetcher,
-  );
+  // Build URL safely with query-string (encodes only provided params)
+  const apiUrl = useMemo(() => {
+    return qs.stringifyUrl({
+      url: "/api/pelanggaran",
+      query: {
+        query,
+        page,
+        limit,
+        startDate,
+        endDate,
+      },
+    });
+  }, [query, page, limit, startDate, endDate]);
 
-  const pelanggaranList = data?.pelanggaran || [];
-  const totalPages = data?.pagination?.totalPages || 1;
+  const { data, error, isLoading } = useSWR(apiUrl, fetcher);
 
-  const changePage = (offset: number) => {
+  const pelanggaranList = data?.pelanggaran ?? [];
+  const { totalPages = 1 } = data?.pagination ?? {};
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Pagination helpers
+  // ────────────────────────────────────────────────────────────────────────────
+  const changeParam = (key: string, value: string | number | undefined) => {
     const params = new URLSearchParams(searchParams.toString());
+    if (value === undefined) params.delete(key);
+    else params.set(key, String(value));
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    changeParam("limit", e.target.value);
+    changeParam("page", 1);
+  };
+
+  const goPage = (offset: number) => {
     const newPage = Math.max(1, Math.min(totalPages, page + offset));
-    params.set("page", newPage.toString());
-    router.push(`${pathname}?${params.toString()}`);
+    changeParam("page", newPage);
   };
 
-  const handleLimitChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("limit", event.target.value);
-    params.set("page", "1");
-    router.push(`${pathname}?${params.toString()}`);
+  // ────────────────────────────────────────────────────────────────────────────
+  // Render helpers
+  // ────────────────────────────────────────────────────────────────────────────
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleString();
   };
 
+  // ────────────────────────────────────────────────────────────────────────────
+  // UI
+  // ────────────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return <p className="mt-3 text-center text-gray-500">Loading data...</p>;
   }
 
   if (error) {
-    console.error("Error loading data:", error);
+    console.error(error);
     return <p className="mt-3 text-center text-red-500">Gagal memuat data</p>;
   }
 
   return (
-    <div className="rounded-sm border  border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-      <div className="w-full overflow-auto  ">
-        <table className="w-full table-auto ">
+    <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="w-full overflow-auto">
+        <table className="w-full table-auto">
           <thead>
             <tr className="bg-gray-2 text-left dark:bg-meta-4">
-              <th className="px-4 py-3 text-sm font-medium text-black dark:text-white">
-                ID
-              </th>
-              <th className="px-4 py-3 text-sm font-medium text-black dark:text-white">
-                Waktu
-              </th>
-              <th className="px-4 py-3 text-sm font-medium text-black dark:text-white">
-                Jenis Pelanggaran
-              </th>
-              <th className="px-4 py-3 text-sm font-medium text-black dark:text-white">
-                Gambar
-              </th>
-              <th className="px-4 py-3 text-sm font-medium text-black dark:text-white">
-                Nama Pengemudi
-              </th>
+              {[
+                "ID",
+                "Waktu",
+                "Jenis Pelanggaran",
+                "Gambar",
+                "Nama Pengemudi",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-4 py-3 text-sm font-medium text-black dark:text-white"
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -94,10 +124,7 @@ const HistoriPelanggaranTable = () => {
                     {item.id}
                   </td>
                   <td className="px-4 py-4 text-sm text-black dark:text-white">
-                    {new Date(item.waktu_pelanggaran)
-                      .toISOString()
-                      .replace("T", " ")
-                      .slice(0, 19)}
+                    {formatDate(item.waktu_pelanggaran)}
                   </td>
                   <td className="px-4 py-4 text-sm text-black dark:text-white">
                     {item.jenis_pelanggaran}
@@ -105,20 +132,21 @@ const HistoriPelanggaranTable = () => {
                   <td className="px-4 py-4 text-sm">
                     {item.image ? (
                       <Image
-                        width={250}
-                        height={250}
                         image={{
                           src: item.image,
-                          alt: "Pelanggaran Gambar",
+                          alt: "Pelanggaran",
                           title: "pelanggaran",
                         }}
+                        width={250}
+                        height={250}
                       />
                     ) : (
                       <span className="text-gray-500">Tidak ada gambar</span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-sm text-black dark:text-white">
-                    {item.raspberrypi?.pengemudi?.nama || "-"}
+                    {/* Gunakan nama_pengemudi redundan jika ada, fallback ke relasi */}
+                    {item.nama_pengemudi}
                   </td>
                 </tr>
               ))
@@ -127,6 +155,7 @@ const HistoriPelanggaranTable = () => {
         </table>
       </div>
 
+      {/* Pagination Controls */}
       <div className="flex flex-col items-center justify-between gap-3 bg-gray-50 p-4 dark:bg-gray-700 sm:flex-row">
         <div className="flex items-center gap-2 text-sm">
           <select
@@ -135,9 +164,11 @@ const HistoriPelanggaranTable = () => {
             onChange={handleLimitChange}
             className="rounded border bg-white px-2 py-1 text-sm dark:bg-gray-600 dark:text-white"
           >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
+            {[5, 10, 20].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
           </select>
           <span className="text-sm text-black dark:text-white">
             per halaman
@@ -147,7 +178,7 @@ const HistoriPelanggaranTable = () => {
         <div className="flex items-center gap-2">
           <button
             disabled={page <= 1}
-            onClick={() => changePage(-1)}
+            onClick={() => goPage(-1)}
             className="rounded bg-gray-200 px-3 py-1 disabled:opacity-50 dark:bg-gray-600"
           >
             Previous
@@ -157,7 +188,7 @@ const HistoriPelanggaranTable = () => {
           </span>
           <button
             disabled={page >= totalPages}
-            onClick={() => changePage(1)}
+            onClick={() => goPage(1)}
             className="rounded bg-gray-200 px-3 py-1 disabled:opacity-50 dark:bg-gray-600"
           >
             Next
@@ -166,6 +197,4 @@ const HistoriPelanggaranTable = () => {
       </div>
     </div>
   );
-};
-
-export default HistoriPelanggaranTable;
+}
