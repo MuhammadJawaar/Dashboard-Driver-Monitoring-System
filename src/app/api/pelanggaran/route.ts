@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client"; // ✅ tambahkan `Prisma` di sini
 import { z } from "zod";
 import { ensureAuth } from "@/lib/authApi";
 
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
-const prisma = new PrismaClient();
+// Singleton Prisma Instance
+const globalForPrisma = global as unknown as { prisma?: PrismaClient };
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient({ log: ["error"] });
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// Validasi schema dengan Zod
+// Zod Schema
 const pelanggaranSchema = z.object({
   waktu_pelanggaran: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Waktu pelanggaran tidak valid",
@@ -17,7 +21,38 @@ const pelanggaranSchema = z.object({
   image: z.string().nullable().optional(),
 });
 
-// ✅ **GET: Tidak membutuhkan API Key**
+// 🔍 Helper untuk filter pencarian
+function buildSearchFilter(query: string) {
+  if (!query) return {};
+
+  return {
+    OR: [
+      {
+        jenis_pelanggaran: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      {
+        id_raspberrypi: {
+          equals: isNaN(Number(query)) ? undefined : Number(query),
+        },
+      },
+      {
+        raspberrypi: {
+          pengemudi: {
+            nama: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        },
+      },
+    ],
+  };
+}
+
+// 📥 GET: Ambil semua pelanggaran (dengan filter & pagination)
 export async function GET(req: Request) {
   try {
     const session = await ensureAuth();
@@ -31,73 +66,59 @@ export async function GET(req: Request) {
     const endDate = searchParams.get("endDate");
 
     if (page < 1 || limit < 1) {
-      return NextResponse.json(
-        { error: "Page dan limit harus bernilai positif" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Page dan limit harus bernilai positif" }, { status: 400 });
     }
 
-    let dateFilter: any = {};
-    let parsedStartDate: Date | null = null;
-    let parsedEndDate: Date | null = null;
-
+    // Date parsing
+    const dateFilter: Prisma.DateTimeFilter = {};
     if (startDate && !isNaN(Date.parse(startDate))) {
-      parsedStartDate = new Date(startDate);
-      dateFilter.gte = parsedStartDate;
+      dateFilter.gte = new Date(startDate);
     }
-
     if (endDate && !isNaN(Date.parse(endDate))) {
-      parsedEndDate = new Date(endDate);
-      parsedEndDate.setHours(23, 59, 59, 999); // Set ke akhir hari
-      dateFilter.lte = parsedEndDate;
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.lte = end;
     }
 
-    // Validasi bahwa startDate <= endDate
-    if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
-      return NextResponse.json(
-        { error: "Tanggal mulai tidak boleh lebih besar dari tanggal akhir" },
-        { status: 400 }
-      );
+    if (dateFilter.gte && dateFilter.lte && dateFilter.gte > dateFilter.lte) {
+      return NextResponse.json({ error: "Tanggal mulai tidak boleh lebih besar dari tanggal akhir" }, { status: 400 });
     }
 
-    let searchFilter: any = {};
-    if (query) {
-      searchFilter.OR = [
-        { jenis_pelanggaran: { contains: query, mode: "insensitive" } },
+    // Explicit filter object
+    const whereCond: Prisma.histori_pelanggaranWhereInput = {
+      ...(Object.keys(dateFilter).length > 0 && {
+        waktu_pelanggaran: dateFilter,
+      }),
+      OR: [
         {
-          id_raspberrypi: {
-            equals: isNaN(Number(query)) ? undefined : Number(query),
+          jenis_pelanggaran: {
+            contains: query,
+            mode: "insensitive",
           },
+        },
+        {
+          id_raspberrypi: isNaN(Number(query)) ? undefined : Number(query),
         },
         {
           raspberrypi: {
             pengemudi: {
-              nama: { contains: query, mode: "insensitive" },
+              nama: {
+                contains: query,
+                mode: "insensitive",
+              },
             },
           },
         },
-      ];
-    }
+      ],
+    };
 
-    const totalPelanggaran = await prisma.histori_pelanggaran.count({
-      where: {
-        ...searchFilter,
-        waktu_pelanggaran:
-          Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
-      },
-    });
-
-    const totalPages = Math.max(Math.ceil(totalPelanggaran / limit), 1);
+    const total = await prisma.histori_pelanggaran.count({ where: whereCond });
+    const totalPages = Math.max(Math.ceil(total / limit), 1);
     const currentPage = Math.min(page, totalPages);
-    const skip = (currentPage - 1) * limit;
 
     const pelanggaran = await prisma.histori_pelanggaran.findMany({
-      where: {
-        ...searchFilter,
-        waktu_pelanggaran:
-          Object.keys(dateFilter).length > 0 ? dateFilter : undefined,
-      },
-      skip,
+      where: whereCond,
+      skip: (currentPage - 1) * limit,
       take: limit,
       orderBy: { waktu_pelanggaran: "desc" },
       include: {
@@ -116,25 +137,19 @@ export async function GET(req: Request) {
         page: currentPage,
         limit,
         totalPages,
-        totalPelanggaran,
+        totalPelanggaran: total,
       },
     });
   } catch (error) {
     console.error("Error fetching pelanggaran:", error);
-    return NextResponse.json(
-      { error: "Gagal mengambil data pelanggaran" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Gagal mengambil data pelanggaran" }, { status: 500 });
   }
 }
 
-
-// ✅ **POST: Harus menyertakan API Key**
+// 📤 POST: Tambah pelanggaran (dengan API Key)
 export async function POST(req: Request) {
   try {
-    // 🔒 Cek API Key terlebih dahulu
     const apiKeyHeader = req.headers.get("X-API-KEY");
-
 
     if (!apiKeyHeader || apiKeyHeader !== API_KEY) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -142,22 +157,44 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // Validasi data dengan Zod
-    const validation = pelanggaranSchema.safeParse(body);
-    if (!validation.success) {
+    const parsed = pelanggaranSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Validasi gagal", details: validation.error.format() },
+        { error: "Validasi gagal", details: parsed.error.format() },
         { status: 400 }
       );
     }
 
-    // Simpan data ke database
+    const { waktu_pelanggaran, jenis_pelanggaran, id_raspberrypi, image } = parsed.data;
+
+    let nama_pengemudi: string | null = null;
+    let plat_bus: string | null = null;
+    let merek_bus: string | null = null;
+
+    if (id_raspberrypi) {
+      const rp = await prisma.raspberrypi.findUnique({
+        where: { id: id_raspberrypi },
+        include: { pengemudi: true, Bus: true },
+      });
+
+      if (!rp) {
+        return NextResponse.json({ error: "RaspberryPi tidak ditemukan" }, { status: 404 });
+      }
+
+      nama_pengemudi = rp.pengemudi?.nama ?? null;
+      plat_bus = rp.Bus?.plat_bus ?? null;
+      merek_bus = rp.Bus?.merek ?? null;
+    }
+
     const newPelanggaran = await prisma.histori_pelanggaran.create({
       data: {
-        waktu_pelanggaran: new Date(body.waktu_pelanggaran),
-        jenis_pelanggaran: body.jenis_pelanggaran,
-        id_raspberrypi: body.id_raspberrypi || null,
-        image: body.image || null,
+        waktu_pelanggaran: new Date(waktu_pelanggaran),
+        jenis_pelanggaran,
+        id_raspberrypi: id_raspberrypi ?? null,
+        image: image ?? null,
+        nama_pengemudi,
+        plat_bus,
+        merek_bus,
       },
     });
 

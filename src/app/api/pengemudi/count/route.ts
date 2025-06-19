@@ -9,7 +9,13 @@ export async function GET() {
     const session = await ensureAuth();
     if (session instanceof NextResponse) return session;
 
-    const totalPengemudi = await prisma.pengemudi.count();
+    const totalPengemudi = await prisma.pengemudi.count(
+      {
+      where: {
+        deletedAt: null, // ✅ hanya hitung yang belum dihapus
+      },
+    }
+    );
     return NextResponse.json({ totalPengemudi });
   } catch (error) {
     console.error("Error fetching total pengemudi count:", error);

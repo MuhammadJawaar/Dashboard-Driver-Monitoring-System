@@ -2,26 +2,42 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { ensureAuth } from "@/lib/authApi";
-const prisma = new PrismaClient();
 
-// Schema validasi untuk update
+// -----------------------------------------------------------------------------
+// Singleton Prisma instance (prevent hot‑reload leaks)
+// -----------------------------------------------------------------------------
+const globalForPrisma = global as unknown as { prisma?: PrismaClient };
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({ log: ["error"] });
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+// -----------------------------------------------------------------------------
+// Validation schema for update
+// -----------------------------------------------------------------------------
 const raspberryPiSchema = z.object({
   id_pengemudi: z.string().uuid().nullable().optional(),
   id_bus: z.string().uuid().nullable().optional(),
 });
 
-// **GET RaspberryPi by ID**
+// Helper: extract numeric id
+const extractIntId = (url: string) => Number(url.split("/").pop());
+
+// -----------------------------------------------------------------------------
+// GET /api/raspberrypi/[id]
+// -----------------------------------------------------------------------------
 export async function GET(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
-    const id = Number(req.url.split("/").pop()); // Gunakan context.params.id
-    if (isNaN(id)) {
+    if (session instanceof NextResponse) return session;
+
+    const id = extractIntId(req.url);
+    if (Number.isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
     }
 
     const raspberryPi = await prisma.raspberrypi.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: {
         pengemudi: { select: { nama: true } },
         Bus: { select: { merek: true, plat_bus: true } },
@@ -34,31 +50,54 @@ export async function GET(req: Request) {
 
     return NextResponse.json(raspberryPi);
   } catch (error) {
+    console.error("Error fetching raspberrypi:", error);
     return NextResponse.json({ error: "Terjadi kesalahan pada server" }, { status: 500 });
   }
 }
 
-// **UPDATE RaspberryPi by ID**
+// -----------------------------------------------------------------------------
+// PUT /api/raspberrypi/[id]
+// -----------------------------------------------------------------------------
 export async function PUT(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
-    const id = Number(req.url.split("/").pop());
-    if (isNaN(id)) {
+    if (session instanceof NextResponse) return session;
+
+    const id = extractIntId(req.url);
+    if (Number.isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
     }
 
     const body = await req.json();
-    const parsedData = raspberryPiSchema.safeParse(body);
-
-    if (!parsedData.success) {
-      return NextResponse.json({ errors: parsedData.error.format() }, { status: 400 });
+    const parsed = raspberryPiSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ errors: parsed.error.format() }, { status: 400 });
     }
 
-    const { id_pengemudi, id_bus } = parsedData.data;
+    const { id_pengemudi, id_bus } = parsed.data;
 
-    const updatedRaspberryPi = await prisma.raspberrypi.update({
-      where: { id },
+    // Optional: validate referenced entities exist (and active)
+    if (id_pengemudi) {
+      const driverExist = await prisma.pengemudi.findFirst({
+        where: { id: id_pengemudi, deletedAt: null },
+        select: { id: true },
+      });
+      if (!driverExist) {
+        return NextResponse.json({ error: "Pengemudi tidak ditemukan" }, { status: 404 });
+      }
+    }
+    if (id_bus) {
+      const busExist = await prisma.bus.findFirst({
+        where: { id: id_bus, deletedAt: null },
+        select: { id: true },
+      });
+      if (!busExist) {
+        return NextResponse.json({ error: "Bus tidak ditemukan" }, { status: 404 });
+      }
+    }
+
+    const updated = await prisma.raspberrypi.update({
+      where: { id, deletedAt: null },
       data: {
         id_pengemudi: id_pengemudi ?? null,
         id_bus: id_bus ?? null,
@@ -70,34 +109,45 @@ export async function PUT(req: Request) {
       },
     });
 
-    return NextResponse.json(updatedRaspberryPi);
+    return NextResponse.json(updated);
   } catch (error: any) {
-    if (error.code === "P2025") {
+    console.error("Error updating raspberrypi:", error);
+    if (error?.code === "P2025") {
       return NextResponse.json({ error: "RaspberryPi tidak ditemukan" }, { status: 404 });
     }
     return NextResponse.json({ error: "Terjadi kesalahan pada server" }, { status: 500 });
   }
 }
 
-// **DELETE RaspberryPi by ID**
+// -----------------------------------------------------------------------------
+// DELETE (soft) /api/raspberrypi/[id]
+// -----------------------------------------------------------------------------
 export async function DELETE(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
-    const id = Number(req.url.split("/").pop());
-    if (isNaN(id)) {
+    if (session instanceof NextResponse) return session;
+
+    const id = extractIntId(req.url);
+    if (Number.isNaN(id)) {
       return NextResponse.json({ error: "ID harus berupa angka" }, { status: 400 });
     }
 
-    const deleted = await prisma.raspberrypi.delete({
-      where: { id },
-    });
+    // Soft delete + detach hist
+    await prisma.$transaction([
+      prisma.raspberrypi.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      }),
+    ]);
 
-    return NextResponse.json({ message: "RaspberryPi berhasil dihapus", deleted });
+    return NextResponse.json({ message: "RaspberryPi berhasil dihapus" });
   } catch (error: any) {
-    if (error.code === "P2025") {
+    console.error("Error deleting raspberrypi:", error);
+
+    if (error?.code === "P2025") {
       return NextResponse.json({ error: "RaspberryPi tidak ditemukan" }, { status: 404 });
     }
+
     return NextResponse.json({ error: "Terjadi kesalahan pada server" }, { status: 500 });
   }
 }

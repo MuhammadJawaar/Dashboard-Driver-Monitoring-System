@@ -8,55 +8,70 @@ datasource db {
 }
 
 model Bus {
-  id              String      @id @db.Uuid
-  plat_bus        String      @unique @db.VarChar
-  merek           String?     @db.VarChar
+  id              String    @id @db.Uuid
+  plat_bus        String    @unique @db.VarChar
+  merek           String?   @db.VarChar
   kapasitas       Int?
   tahun_pembuatan Int?
-  createdAt       DateTime    @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime    @updatedAt @db.Timestamp(6)
-  raspberrypi     raspberrypi[]
-}
+  createdAt       DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamp(6)
+  deletedAt       DateTime? @db.Timestamp(6)
 
-model histori_pelanggaran {
-  id                Int        @id @default(autoincrement())
-  waktu_pelanggaran DateTime   @db.Timestamp(6)
-  jenis_pelanggaran String     @db.VarChar
-  id_raspberrypi    Int?       // ✅ Perbaiki typo dari id_rasberrypi ke id_raspberrypi
-  image             String?    @db.VarChar
-  createdAt         DateTime   @default(now()) @db.Timestamp(6)
-  updatedAt         DateTime   @updatedAt @db.Timestamp(6)
-  raspberrypi       raspberrypi? @relation(fields: [id_raspberrypi], references: [id], onDelete: Cascade, onUpdate: NoAction) // ✅ Ubah onDelete jadi Cascade
+  raspberrypi raspberrypi[]
 }
 
 model pengemudi {
-  id            String      @id @db.Uuid
-  nama          String?     @db.VarChar
-  alamat        String?     @db.VarChar
-  nomor_telepon String?     @db.VarChar
-  tanggal_lahir DateTime?   @db.Date
-  createdAt     DateTime    @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime    @updatedAt @db.Timestamp(6)
-  raspberrypi   raspberrypi[]
+  id            String    @id @db.Uuid
+  nama          String?   @db.VarChar
+  alamat        String?   @db.VarChar
+  nomor_telepon String?   @db.VarChar
+  tanggal_lahir DateTime? @db.Date
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamp(6)
+  deletedAt     DateTime? @db.Timestamp(6)
+
+  raspberrypi raspberrypi[]
 }
 
 model raspberrypi {
-  id                  Int                   @id @default(autoincrement())
-  id_pengemudi        String?               @db.Uuid
-  id_bus              String?               @db.Uuid
-  createdAt           DateTime              @default(now()) @db.Timestamp(6)
-  updatedAt           DateTime              @updatedAt @db.Timestamp(6)
+  id           Int       @id @default(autoincrement())
+  id_pengemudi String?   @db.Uuid
+  id_bus       String?   @db.Uuid
+  createdAt    DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamp(6)
+  deletedAt    DateTime? @db.Timestamp(6)
+
   histori_pelanggaran histori_pelanggaran[]
-  Bus                 Bus?                  @relation(fields: [id_bus], references: [id], onDelete: Cascade, onUpdate: NoAction) // ✅ Ubah onDelete jadi Cascade
-  pengemudi           pengemudi?            @relation(fields: [id_pengemudi], references: [id], onDelete: Cascade, onUpdate: NoAction) // ✅ Ubah onDelete jadi Cascade
+
+  Bus       Bus?       @relation(fields: [id_bus], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  pengemudi pengemudi? @relation(fields: [id_pengemudi], references: [id], onDelete: SetNull, onUpdate: NoAction)
+}
+
+model histori_pelanggaran {
+  id                Int      @id @default(autoincrement())
+  waktu_pelanggaran DateTime @db.Timestamp(6)
+  jenis_pelanggaran String   @db.VarChar
+  id_raspberrypi    Int?
+  image             String?  @db.VarChar
+
+  // Redundansi parsial
+  nama_pengemudi String? @db.VarChar
+  plat_bus       String? @db.VarChar
+  merek_bus      String? @db.VarChar
+
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+
+  raspberrypi raspberrypi? @relation(fields: [id_raspberrypi], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model admin {
-  id            String  @id @db.Uuid
-  nama          String? @db.VarChar
-  nomor_telepon String? @db.VarChar
-  email         String  @db.VarChar @unique
-  password      String  @db.VarChar @default("") // ✅ Tambahkan default value untuk menghindari null
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @updatedAt @db.Timestamp(6)
+  id            String    @id @db.Uuid
+  nama          String?   @db.VarChar
+  nomor_telepon String?   @db.VarChar
+  email         String    @unique @db.VarChar
+  password      String    @default("") @db.VarChar
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamp(6)
+  deletedAt     DateTime? @db.Timestamp(6)
 }

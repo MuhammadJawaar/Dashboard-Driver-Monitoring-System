@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
- const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
-// GET Admins (All or by Email)
+// GET Admins (All or by Email, exclude soft-deleted)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -11,7 +11,10 @@ export async function GET(req: Request) {
 
     if (email) {
       const admin = await prisma.admin.findFirst({
-        where: { email },
+        where: {
+          email,
+          deletedAt: null, // ✅ hanya ambil admin yang belum dihapus
+        },
       });
 
       if (!admin) {
@@ -21,7 +24,12 @@ export async function GET(req: Request) {
       return NextResponse.json(admin);
     }
 
-    const admins = await prisma.admin.findMany();
+    const admins = await prisma.admin.findMany({
+      where: {
+        deletedAt: null, // ✅ hanya ambil admin yang belum dihapus
+      },
+    });
+
     return NextResponse.json(admins);
   } catch (error) {
     console.error("Error fetching admin:", error);

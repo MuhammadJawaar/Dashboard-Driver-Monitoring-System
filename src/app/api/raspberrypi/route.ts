@@ -3,136 +3,148 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { ensureAuth } from "@/lib/authApi";
 
-const prisma = new PrismaClient();
+// -----------------------------------------------------------------------------
+// Singleton Prisma instance (avoid hot‑reload leaks in dev)
+// -----------------------------------------------------------------------------
+const globalForPrisma = global as unknown as { prisma?: PrismaClient };
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({ log: ["error"] });
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// Validasi schema dengan Zod
+// -----------------------------------------------------------------------------
+// Validation schema
+// -----------------------------------------------------------------------------
 const raspberryPiSchema = z.object({
   id_pengemudi: z.string().uuid().nullable().optional(),
   id_bus: z.string().uuid().nullable().optional(),
 });
 
-// **GET ALL RASPBERRYPI with Pagination & Search**
+// Helper: build where clause for search
+const buildSearchWhere = (query: string) => ({
+  deletedAt: null,
+  OR: [
+    {
+      pengemudi: {
+        nama: { contains: query, mode: "insensitive" as const },
+        deletedAt: null,
+      },
+    },
+    {
+      Bus: {
+        plat_bus: { contains: query, mode: "insensitive" as const },
+        deletedAt: null,
+      },
+    },
+    {
+      Bus: {
+        merek: { contains: query, mode: "insensitive" as const },
+        deletedAt: null,
+      },
+    },
+    { id: !isNaN(Number(query)) ? Number(query) : undefined },
+  ],
+});
+
+// -----------------------------------------------------------------------------
+// GET /api/raspberrypi  (list with search & pagination)
+// -----------------------------------------------------------------------------
 export async function GET(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
+    if (session instanceof NextResponse) return session;
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 5;
 
     if (page < 1 || limit < 1) {
-      return NextResponse.json(
-        { error: "Page dan limit harus bernilai positif" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Page dan limit harus bernilai positif" }, { status: 400 });
     }
 
-    // Hitung total data dengan filter pencarian
-    const totalRaspberryPi = await prisma.raspberrypi.count({
-      where: {
-        OR: [
-          { pengemudi: { nama: { contains: query, mode: "insensitive" } } },
-          { Bus: { plat_bus: { contains: query, mode: "insensitive" } } },
-          { Bus: { merek: { contains: query, mode: "insensitive" } } },
-          { id: { equals: isNaN(Number(query)) ? undefined : Number(query) } },           
-        ],
-      },
-    });
+    const whereCond = buildSearchWhere(query);
 
-    // Pastikan halaman tidak melebihi total
-    const totalPages = Math.max(Math.ceil(totalRaspberryPi / limit), 1);
+    const total = await prisma.raspberrypi.count({ where: whereCond });
+    const totalPages = Math.max(Math.ceil(total / limit), 1);
     const currentPage = Math.min(page, totalPages);
-    const skip = (currentPage - 1) * limit;
 
-    // Ambil data dengan pencarian & pagination
     const raspberryPi = await prisma.raspberrypi.findMany({
-      where: {
-        OR: [
-          { pengemudi: { nama: { contains: query, mode: "insensitive" } } },
-          { Bus: { plat_bus: { contains: query, mode: "insensitive" } } },
-          { Bus: { merek: { contains: query, mode: "insensitive" } } },
-          { id: { equals: isNaN(Number(query)) ? undefined : Number(query) } }, 
-        ],
-      },
-      skip,
+      where: whereCond,
+      skip: (currentPage - 1) * limit,
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
-        pengemudi: {
-          select: {
-            nama: true,
-          },
-        },
-        Bus: {
-          select: {
-            merek: true,
-            plat_bus: true,
-          },
-        },
+        pengemudi: { select: { nama: true } },
+        Bus: { select: { merek: true, plat_bus: true } },
       },
     });
 
     return NextResponse.json({
       raspberryPi,
-      pagination: {
-        page: currentPage,
-        limit,
-        totalPages,
-        totalRaspberryPi,
-      },
+      pagination: { page: currentPage, limit, totalPages, totalRaspberryPi: total },
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Gagal mengambil data RaspberryPi" },
-      { status: 500 }
-    );
+    console.error("Error fetching raspberrypi list:", error);
+    return NextResponse.json({ error: "Gagal mengambil data RaspberryPi" }, { status: 500 });
   }
 }
 
-// **CREATE A NEW RASPBERRYPI**
+// -----------------------------------------------------------------------------
+// POST /api/raspberrypi  (create new)
+// -----------------------------------------------------------------------------
 export async function POST(req: Request) {
   try {
     const session = await ensureAuth();
-    if (session instanceof NextResponse) return session;    
+    if (session instanceof NextResponse) return session;
+
     const body = await req.json();
-
     if (!body || Object.keys(body).length === 0) {
-      return NextResponse.json(
-        { error: "Body request tidak boleh kosong" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Body request tidak boleh kosong" }, { status: 400 });
     }
 
-    const parsedData = raspberryPiSchema.safeParse(body);
-    if (!parsedData.success) {
-      return NextResponse.json(
-        { errors: parsedData.error.format() },
-        { status: 400 }
-      );
+    const parsed = raspberryPiSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ errors: parsed.error.format() }, { status: 400 });
     }
 
-    const { id_pengemudi, id_bus } = parsedData.data;
+    const { id_pengemudi, id_bus } = parsed.data;
 
-    const newRaspberryPi = await prisma.raspberrypi.create({
+    // Validate referenced entities (if provided)
+    if (id_pengemudi) {
+      const driverExists = await prisma.pengemudi.findFirst({
+        where: { id: id_pengemudi, deletedAt: null },
+        select: { id: true },
+      });
+      if (!driverExists) {
+        return NextResponse.json({ error: "Pengemudi tidak ditemukan" }, { status: 404 });
+      }
+    }
+
+    if (id_bus) {
+      const busExists = await prisma.bus.findFirst({
+        where: { id: id_bus, deletedAt: null },
+        select: { id: true },
+      });
+      if (!busExists) {
+        return NextResponse.json({ error: "Bus tidak ditemukan" }, { status: 404 });
+      }
+    }
+
+    const newPi = await prisma.raspberrypi.create({
       data: {
         id_pengemudi: id_pengemudi ?? null,
         id_bus: id_bus ?? null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
       include: {
-        pengemudi: true, // Mengambil semua data pengemudi
-        Bus: true, // Mengambil semua data bus
+        pengemudi: { select: { nama: true } },
+        Bus: { select: { merek: true, plat_bus: true } },
       },
     });
 
-    return NextResponse.json(newRaspberryPi, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Terjadi kesalahan pada server" },
-      { status: 500 }
-    );
+    return NextResponse.json(newPi, { status: 201 });
+  } catch (error) {
+    console.error("Error creating raspberrypi:", error);
+    return NextResponse.json({ error: "Terjadi kesalahan pada server" }, { status: 500 });
   }
 }
-
